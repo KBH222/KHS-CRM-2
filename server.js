@@ -31,7 +31,19 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.static(path.join(__dirname, 'frontend/dist')));
+// Serve static files with proper headers
+const staticPath = path.join(__dirname, 'frontend/dist');
+app.use(express.static(staticPath, {
+  setHeaders: (res, filePath) => {
+    // Set cache headers for assets
+    if (filePath.includes('/assets/')) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
+}));
+
+// Log static file serving for debugging
+console.log(`[Server] Serving static files from: ${staticPath}`);
 
 // Auth middleware - enforces authentication
 const authMiddleware = (req, res, next) => {
@@ -71,10 +83,31 @@ app.get('/api/health', async (req, res) => {
       // Table doesn't exist
     }
     
+    // Check frontend build status
+    const frontendPath = path.join(__dirname, 'frontend/dist');
+    const indexExists = fs.existsSync(path.join(frontendPath, 'index.html'));
+    const assetsPath = path.join(frontendPath, 'assets');
+    const assetsExist = fs.existsSync(assetsPath);
+    
+    let assetFiles = [];
+    if (assetsExist) {
+      try {
+        assetFiles = fs.readdirSync(assetsPath).slice(0, 5); // First 5 files
+      } catch (error) {
+        assetFiles = [`Error: ${error.message}`];
+      }
+    }
+    
     res.json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
       message: 'KHS CRM API on Railway',
+      frontend: {
+        built: indexExists && assetsExist,
+        indexExists,
+        assetsExist,
+        sampleAssets: assetFiles
+      },
       database: 'connected',
       hasScheduleEvents
     });
