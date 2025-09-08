@@ -87,7 +87,10 @@
       "Bash(start http://localhost:5173/clear-sw.html)",
       "Bash(cat:*)",
       "WebFetch(domain:khs-crm-3-production.up.railway.app)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(gh api:*)",
+      "Bash(railway --version)",
+      "Bash(npx railway:*)"
     ],
     "deny": []
   }
