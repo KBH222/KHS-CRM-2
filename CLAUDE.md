@@ -120,4 +120,11 @@ VITE_API_URL=https://khs-crm-4-production.up.railway.app
 3. Check Railway logs for backend logging
 4. Use debug endpoints to verify database state
 5. Refresh page to see if photos persist
+
+## Railway Webhook Troubleshooting
+
+Last checked: 2025-01-09
+- Verify webhook in Railway dashboard under Settings > GitHub
+- Check deployment triggers are set to master branch
+- Ensure GitHub integration is connected
 ```
