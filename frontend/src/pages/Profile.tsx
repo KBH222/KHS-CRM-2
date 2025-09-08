@@ -150,53 +150,6 @@ const Profile = () => {
             Profile Settings
           </h1>
         </div>
-        {!editMode ? (
-            <button
-              onClick={() => setEditMode(true)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#3B82F6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '16.1px'
-              }}
-            >
-              Edit Profile
-            </button>
-          ) : (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={() => setEditMode(false)}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#E5E7EB',
-                  color: '#374151',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '16.1px'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#10B981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '16.1px'
-                }}
-              >
-                Save Changes
-              </button>
-            </div>
-          )}
       </div>
 
       {/* Tabs */}
@@ -331,9 +284,58 @@ const Profile = () => {
         {/* Business Info Tab */}
         {activeTab === 'business' && (
           <div>
-            <h2 style={{ fontSize: '20.7px', fontWeight: '600', marginBottom: '20px' }}>
-              Business Information
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '20.7px', fontWeight: '600', margin: 0 }}>
+                Business Information
+              </h2>
+              {!editMode ? (
+                <button
+                  onClick={() => setEditMode(true)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#3B82F6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '16.1px'
+                  }}
+                >
+                  Edit Profile
+                </button>
+              ) : (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => setEditMode(false)}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#E5E7EB',
+                      color: '#374151',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '16.1px'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#10B981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '16.1px'
+                    }}
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              )}
+            </div>
             <div style={{ display: 'grid', gap: '16px' }}>
               {/* Logo Section */}
               <div>
