@@ -1973,6 +1973,22 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
   const [isDraggingTask, setIsDraggingTask] = useState(false);
   
   
+  const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>(
+    existingJob?.title ? existingJob.title.split(' & ') : []
+  );
+  const [jobDescriptions, setJobDescriptions] = useState<{[key: string]: string}>(() => {
+    // Initialize descriptions for existing job
+    if (existingJob?.title && existingJob?.description) {
+      const types = existingJob.title.split(' & ');
+      const descriptions: {[key: string]: string} = {};
+      types.forEach(type => {
+        descriptions[type] = existingJob.description;
+      });
+      return descriptions;
+    }
+    return {};
+  });
+
   const [jobData, setJobData] = useState({
     id: existingJob?.id || null,
     title: existingJob?.title || '',
@@ -2463,50 +2479,125 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
           }}>
             {/* Job Info Tab */}
             {activeTab === 'description' && (
-              <div>
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                {/* Job Type Selection */}
                 <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
-                    Job Title *
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                    Job *
                   </label>
-                  <select
-                    value={jobData.title}
-                    onChange={(e) => setJobData({ ...jobData, title: e.target.value })}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      border: '1px solid #D1D5DB',
-                      borderRadius: '6px',
-                      fontSize: '18.4px',
-                      backgroundColor: 'white'
-                    }}
-                  >
-                    <option value="">Select job type...</option>
-                    <option value="Kitchen">Kitchen</option>
-                    <option value="Bathroom">Bathroom</option>
-                    <option value="Flooring">Flooring</option>
-                    <option value="Various Repairs">Various Repairs</option>
-                  </select>
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '16px',
+                    flexWrap: 'wrap',
+                    padding: '12px',
+                    backgroundColor: '#F9FAFB',
+                    borderRadius: '6px',
+                    border: '1px solid #E5E7EB'
+                  }}>
+                    {['Kitchen', 'Bathroom', 'Flooring', 'Various Repairs', 'Other'].map(type => (
+                      <label key={type} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        fontSize: '16px'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedJobTypes.includes(type)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedJobTypes([...selectedJobTypes, type]);
+                              // Update combined title
+                              const newTypes = [...selectedJobTypes, type];
+                              setJobData({ ...jobData, title: newTypes.join(' & ') });
+                            } else {
+                              const newTypes = selectedJobTypes.filter(t => t !== type);
+                              setSelectedJobTypes(newTypes);
+                              // Remove description for unchecked type
+                              const newDescriptions = { ...jobDescriptions };
+                              delete newDescriptions[type];
+                              setJobDescriptions(newDescriptions);
+                              // Update combined title
+                              setJobData({ ...jobData, title: newTypes.join(' & ') });
+                            }
+                          }}
+                          style={{
+                            marginRight: '8px',
+                            width: '18px',
+                            height: '18px',
+                            cursor: 'pointer',
+                            accentColor: '#3B82F6'
+                          }}
+                        />
+                        {type}
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
-                    Description
-                  </label>
-                  <textarea
-                    value={jobData.description}
-                    onChange={(e) => setJobData({ ...jobData, description: e.target.value })}
-                    rows={6}
-                    placeholder="Describe the work to be done..."
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '1px solid #D1D5DB',
-                      borderRadius: '6px',
-                      fontSize: '18.4px',
-                      resize: 'vertical'
-                    }}
-                  />
+                {/* Scrollable Descriptions Section */}
+                <div style={{ 
+                  flex: 1,
+                  overflowY: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  paddingRight: '8px'
+                }}>
+                  {selectedJobTypes.length === 0 ? (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '40px',
+                      color: '#9CA3AF',
+                      fontSize: '16px'
+                    }}>
+                      Please select at least one job type above
+                    </div>
+                  ) : (
+                    selectedJobTypes.map((type, index) => (
+                      <div key={type} style={{ 
+                        marginBottom: '24px',
+                        padding: '16px',
+                        backgroundColor: '#F9FAFB',
+                        borderRadius: '8px',
+                        border: '1px solid #E5E7EB'
+                      }}>
+                        <label style={{ 
+                          display: 'block', 
+                          marginBottom: '8px', 
+                          fontWeight: '600',
+                          fontSize: '18px',
+                          color: '#374151'
+                        }}>
+                          {type} Description
+                        </label>
+                        <textarea
+                          value={jobDescriptions[type] || ''}
+                          onChange={(e) => {
+                            const newDescriptions = {
+                              ...jobDescriptions,
+                              [type]: e.target.value
+                            };
+                            setJobDescriptions(newDescriptions);
+                            // Update combined description
+                            const allDescriptions = selectedJobTypes
+                              .map(t => newDescriptions[t] || '')
+                              .filter(d => d.trim())
+                              .join('\n\n---\n\n');
+                            setJobData({ ...jobData, description: allDescriptions });
+                          }}
+                          rows={4}
+                          placeholder={`Describe the ${type.toLowerCase()} work to be done...`}
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            border: '1px solid #D1D5DB',
+                            borderRadius: '6px',
+                            fontSize: '16px',
+                            resize: 'vertical'
+                          }}
+                        />
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
