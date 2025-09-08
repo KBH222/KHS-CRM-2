@@ -343,11 +343,8 @@ const Profile = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div 
                     onClick={() => {
-                      console.log('Logo div clicked, editMode:', editMode);
                       if (editMode) {
-                        const fileInput = document.getElementById('logo-upload');
-                        console.log('File input element:', fileInput);
-                        fileInput?.click();
+                        document.getElementById('logo-upload')?.click();
                       }
                     }}
                     style={{
@@ -382,7 +379,7 @@ const Profile = () => {
                       />
                     ) : (
                       <div style={{ 
-                        color: '#9CA3AF', 
+                        color: editMode ? '#6B7280' : '#9CA3AF', 
                         fontSize: '14px', 
                         textAlign: 'center',
                         display: 'flex',
@@ -398,7 +395,12 @@ const Profile = () => {
                             <span>Click to Upload</span>
                           </>
                         ) : (
-                          'No Logo'
+                          <>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ opacity: 0.5 }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span style={{ fontSize: '12px' }}>Edit to upload</span>
+                          </>
                         )}
                       </div>
                     )}
