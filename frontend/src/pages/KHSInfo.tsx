@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface Tool {
   id: string;
@@ -211,6 +212,7 @@ const predefinedTools: CategoryTools = {
 };
 
 const KHSInfo = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Tools List');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [tools, setTools] = useState<CategoryTools>({});
@@ -349,11 +351,7 @@ return;
 
   const renderToolsList = () => {
     return (
-      <div style={{ 
-        padding: '20px',
-        maxWidth: '800px',
-        margin: '0 auto'
-      }}>
+      <div>
         {/* Category Selection */}
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '40px', marginBottom: '16px' }}>
@@ -851,19 +849,19 @@ return;
         return renderToolsList();
       case 'SOP':
         return (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#6B7280', maxWidth: '800px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', color: '#6B7280', padding: '40px 0' }}>
             <p style={{ fontSize: '18px' }}>Standard Operating Procedures - Coming Soon</p>
           </div>
         );
       case 'Office Docs':
         return (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#6B7280', maxWidth: '800px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', color: '#6B7280', padding: '40px 0' }}>
             <p style={{ fontSize: '18px' }}>Office Documents - Coming Soon</p>
           </div>
         );
       case 'Specs':
         return (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#6B7280', maxWidth: '800px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', color: '#6B7280', padding: '40px 0' }}>
             <p style={{ fontSize: '18px' }}>Specifications - Coming Soon</p>
           </div>
         );
@@ -873,31 +871,73 @@ return;
   };
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', backgroundColor: '#F9FAFB' }}>
-      {/* Header */}
-      <div style={{
-        backgroundColor: 'white',
-        borderBottom: '1px solid #E5E7EB',
-        padding: '16px 20px',
-      }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#111827' }}>
-            KHS Info
-          </h1>
+    <div style={{ 
+      height: '100%',
+      overflowY: 'auto',
+      WebkitOverflowScrolling: 'touch',
+      paddingBottom: '100px' // Extra padding for iOS scrolling
+    }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
+        {/* Header */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '20px',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              onClick={() => navigate('/dashboard')}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                color: '#6B7280',
+                borderRadius: '6px'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <svg style={{ width: '28px', height: '28px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h1 style={{ fontSize: '27.6px', fontWeight: 'bold', margin: 0 }}>
+              KHS Info
+            </h1>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              console.log('Lock/Unlock clicked. Current isLocked:', isLocked, 'Setting to:', !isLocked);
+              setIsLocked(!isLocked);
+            }}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: isLocked ? '#10B981' : '#EF4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '16.1px',
+              fontWeight: '500'
+            }}
+          >
+            {isLocked ? 'Unlock All' : 'Lock All'}
+          </button>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div style={{
-        backgroundColor: 'white',
-        borderBottom: '1px solid #E5E7EB',
-        padding: '0 20px',
-      }}>
+        {/* Tabs */}
         <div style={{
-          maxWidth: '800px',
-          margin: '0 auto',
+          marginBottom: '16px',
           display: 'flex',
           gap: '24px',
+          borderBottom: '2px solid #E5E7EB',
           overflowX: 'auto',
         }}>
           {tabs.map(tab => (
@@ -905,25 +945,25 @@ return;
               key={tab}
               onClick={() => setActiveTab(tab)}
               style={{
-                padding: '16px 0',
+                padding: '12px 0',
                 border: 'none',
                 backgroundColor: 'transparent',
                 color: activeTab === tab ? '#3B82F6' : '#6B7280',
-                fontSize: '18px',
+                fontSize: '16px',
                 fontWeight: activeTab === tab ? '600' : '400',
                 cursor: 'pointer',
                 borderBottom: activeTab === tab ? '2px solid #3B82F6' : '2px solid transparent',
+                marginBottom: '-2px',
                 whiteSpace: 'nowrap',
+                transition: 'all 0.2s ease'
               }}
             >
               {tab}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Tab Content */}
-      <div style={{ backgroundColor: 'white', minHeight: 'calc(100% - 120px)' }}>
+        {/* Tab Content */}
         {renderTabContent()}
       </div>
     </div>
