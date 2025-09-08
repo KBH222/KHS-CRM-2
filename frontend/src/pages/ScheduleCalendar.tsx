@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { workerService } from '../services/worker.service';
 import { customersApi, scheduleEventsApi } from '../services/api';
-import { toast } from 'react-toastify';
+// import { toast } from .react-toastify.;
 
 // Timezone utility functions to handle date conversion properly
 const formatDateForInput = (date) => {
@@ -111,7 +111,7 @@ const ScheduleCalendar = () => {
       setAllJobs(jobs);
     } catch (error) {
       console.error('Failed to load jobs:', error);
-      toast.error('Failed to load schedule data');
+      // 'Failed to load schedule data');
     } finally {
       setIsLoading(false);
     }
@@ -251,7 +251,7 @@ const ScheduleCalendar = () => {
     // Check if this is a schedule event or a regular job
     if (job.isScheduleEvent) {
       // For now, just show a toast message
-      toast.info('Edit functionality for schedule events coming soon');
+      // 'Edit functionality for schedule events coming soon');
     } else {
       // Navigate to the job in CustomersEnhanced page
       navigate(`/customers?jobId=${job.id}`);
@@ -267,26 +267,26 @@ const ScheduleCalendar = () => {
       try {
         console.log('Deleting schedule event:', job.id);
         await scheduleEventsApi.delete(job.id);
-        toast.success('Event deleted successfully');
+        // 'Event deleted successfully');
         await loadJobs();
       } catch (error) {
         console.error('Delete error:', error);
-        toast.error(`Failed to delete event: ${error.message || 'Unknown error'}`);
+        // `Failed to delete event: ${error.message || 'Unknown error'}`);
       }
     } else {
       // Regular job - remove from schedule view
       try {
         // For now, just remove from view since we don't have a separate schedule removal API
         if (job.customerId) {
-          toast.info('Job removed from schedule view');
+          // 'Job removed from schedule view');
         } else {
-          toast.success('Job deleted successfully');
+          // 'Job deleted successfully');
         }
         // For immediate visual feedback, remove from local state
         const filteredJobs = allJobs.filter(j => j.id !== job.id);
         setAllJobs(filteredJobs);
       } catch (error) {
-        toast.error('Failed to remove job from schedule');
+        // 'Failed to remove job from schedule');
       }
     }
     setShowEditMenu(null);
@@ -341,11 +341,11 @@ const ScheduleCalendar = () => {
             startDate: convertLocalDateToUTC(formatDateForInput(newStartDate)),
             endDate: convertLocalDateToUTC(formatDateForInput(newEndDate))
           });
-          toast.success('Event moved successfully');
+          // 'Event moved successfully');
         } else {
           // Update regular job
           // For now, show info message since job updates need to be done through customer page
-          toast.info('To permanently update job dates, please edit from the Customers page');
+          // 'To permanently update job dates, please edit from the Customers page');
           // Temporarily update the view
           const jobIndex = allJobs.findIndex(j => j.id === draggedJob.id);
           if (jobIndex !== -1) {
@@ -363,7 +363,7 @@ const ScheduleCalendar = () => {
         await loadJobs();
       } catch (error) {
         console.error('Error updating dates:', error);
-        toast.error('Failed to move event');
+        // 'Failed to move event');
       }
     }
     
@@ -1612,7 +1612,7 @@ const ScheduleCalendar = () => {
                 await scheduleEventsApi.create(eventData);
                 
                 // Show success message
-                toast.success(`${newEvent.type === 'work' ? 'Work' : 'Personal'} event created successfully!`);
+                // `${newEvent.type === 'work' ? 'Work' : 'Personal'} event created successfully!`);
                 
                 // Reload the calendar
                 await loadJobs();
@@ -1633,11 +1633,11 @@ const ScheduleCalendar = () => {
                 console.error('Error creating schedule event:', error);
                 // Show more detailed error message
                 if (error.response?.data?.error) {
-                  toast.error(`Failed to create event: ${error.response.data.error}`);
+                  // `Failed to create event: ${error.response.data.error}`);
                 } else if (error.message) {
-                  toast.error(`Failed to create event: ${error.message}`);
+                  // `Failed to create event: ${error.message}`);
                 } else {
-                  toast.error('Failed to create event. Please try again.');
+                  // 'Failed to create event. Please try again.');
                 }
               }
             }}>

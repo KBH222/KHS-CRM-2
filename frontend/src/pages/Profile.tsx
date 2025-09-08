@@ -75,21 +75,19 @@ const Profile = () => {
   const handleSave = () => {
     setEditMode(false);
     profileStorage.save(profile);
-    alert('Profile updated successfully!');
   };
 
   const handlePasswordChange = (e) => {
     e.preventDefault();
     if (passwords.new !== passwords.confirm) {
-      alert('New passwords do not match!');
+      // Passwords don't match
       return;
     }
     if (passwords.new.length < 8) {
-      alert('Password must be at least 8 characters!');
+      // Password too short
       return;
     }
     // In real app, validate current password and update
-    alert('Password changed successfully!');
     setShowPasswordModal(false);
     setPasswords({ current: '', new: '', confirm: '' });
   };
@@ -419,7 +417,7 @@ const Profile = () => {
                           if (file) {
                             // Check file size (limit to 2MB)
                             if (file.size > 2 * 1024 * 1024) {
-                              alert('Logo file size must be less than 2MB');
+                              // File too large
                               return;
                             }
 

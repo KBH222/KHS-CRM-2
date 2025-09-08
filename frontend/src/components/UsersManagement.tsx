@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usersApi, User, CreateUserDto } from '../services/api/users.api';
-import { toast } from 'react-toastify';
+// import { toast } from .react-toastify.;
 
 interface UsersManagementProps {
   currentUserId: string;
@@ -30,7 +30,7 @@ export const UsersManagement = ({ currentUserId }: UsersManagementProps) => {
       const data = await usersApi.getAll();
       setUsers(data);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to load users');
+      // error.response?.data?.error || 'Failed to load users');
     } finally {
       setLoading(false);
     }
@@ -41,12 +41,12 @@ export const UsersManagement = ({ currentUserId }: UsersManagementProps) => {
     
     try {
       await usersApi.create(newUser);
-      toast.success('User created successfully');
+      // 'User created successfully');
       setShowCreateModal(false);
       setNewUser({ email: '', password: '', name: '', role: 'WORKER' });
       loadUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to create user');
+      // error.response?.data?.error || 'Failed to create user');
     }
   };
 
@@ -57,12 +57,12 @@ export const UsersManagement = ({ currentUserId }: UsersManagementProps) => {
     
     try {
       await usersApi.resetPassword(selectedUser.id, { password: newPassword });
-      toast.success('Password reset successfully');
+      // 'Password reset successfully');
       setShowPasswordModal(false);
       setNewPassword('');
       setSelectedUser(null);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to reset password');
+      // error.response?.data?.error || 'Failed to reset password');
     }
   };
 
@@ -73,10 +73,10 @@ export const UsersManagement = ({ currentUserId }: UsersManagementProps) => {
     
     try {
       await usersApi.delete(user.id);
-      toast.success('User deleted successfully');
+      // 'User deleted successfully');
       loadUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to delete user');
+      // error.response?.data?.error || 'Failed to delete user');
     }
   };
 

@@ -54,15 +54,15 @@ export function SyncDiagnostics() {
     try {
       const customers = await apiClient.get('/api/customers');
       if (!Array.isArray(customers)) {
-        alert(`Unexpected response format. Check console for details.`);
+        // `Unexpected response format. Check console for details.`);
         return;
       }
 
-      alert(`Fetched ${customers.length} customers from backend`);
+      // `Fetched ${customers.length} customers from backend`);
     } catch (error) {
       const errorMessage = error?.response?.data?.error || error?.message || String(error);
       const status = error?.response?.status;
-      alert(`Failed to fetch customers:\nStatus: ${status}\nError: ${errorMessage}\n\nAPI URL: ${diagnostics.apiUrl}`);
+      // `Failed to fetch customers:\nStatus: ${status}\nError: ${errorMessage}\n\nAPI URL: ${diagnostics.apiUrl}`);
     }
   };
 
@@ -73,10 +73,10 @@ export function SyncDiagnostics() {
         address: '123 Test St',
         phone: '555-0123'
       });
-      alert(`Created customer: ${customer.name} (ID: ${customer.id})`);
+      // `Created customer: ${customer.name} (ID: ${customer.id})`);
     } catch (error) {
       // Customer create failed
-      alert(`Failed to create customer: ${error}`);
+      // `Failed to create customer: ${error}`);
     }
   };
 
@@ -95,10 +95,10 @@ export function SyncDiagnostics() {
       }
 
       const data = await response.json();
-      alert(`Direct fetch successful! Backend is reachable.\nResponse: ${JSON.stringify(data)}`);
+      // `Direct fetch successful! Backend is reachable.\nResponse: ${JSON.stringify(data)}`);
     } catch (error) {
       // Direct fetch failed
-      alert(`Direct fetch failed: ${error}\n\nThis means CORS is still blocking requests.\nCheck if Render has restarted with the new FRONTEND_URL.`);
+      // `Direct fetch failed: ${error}\n\nThis means CORS is still blocking requests.\nCheck if Render has restarted with the new FRONTEND_URL.`);
     }
   };
 
@@ -123,10 +123,10 @@ export function SyncDiagnostics() {
               const response = await fetch(url);
               const data = await response.json();
 
-              alert(`Backend is ${data.status === 'ok' ? 'WORKING' : 'NOT WORKING'}!\n\nResponse: ${JSON.stringify(data, null, 2)}`);
+              // `Backend is ${data.status === 'ok' ? 'WORKING' : 'NOT WORKING'}!\n\nResponse: ${JSON.stringify(data, null, 2)}`);
             } catch (error) {
               console.error('[SyncDiagnostics] Health check failed:', error);
-              alert(`Backend health check FAILED!\n\nError: ${error?.message || error}\n\nThis means the frontend cannot reach the backend API.`);
+              // `Backend health check FAILED!\n\nError: ${error?.message || error}\n\nThis means the frontend cannot reach the backend API.`);
             }
           }}
           className="w-full text-xs bg-green-600 text-white px-2 py-1 rounded"
@@ -190,14 +190,14 @@ export function SyncDiagnostics() {
               setDiagnostics(prev => ({ ...prev, lastError: null }));
               const result = await simpleSyncService.syncAll();
               if (result.success) {
-                alert(`Sync complete!\nSynced: ${result.synced}\nFailed: ${result.failed}`);
+                // `Sync complete!\nSynced: ${result.synced}\nFailed: ${result.failed}`);
               } else {
-                alert(`Sync failed!\nSynced: ${result.synced}\nFailed: ${result.failed}\n\nCheck console for details.`);
+                // `Sync failed!\nSynced: ${result.synced}\nFailed: ${result.failed}\n\nCheck console for details.`);
               }
             } catch (error) {
               console.error('[SyncDiagnostics] Sync error:', error);
               setDiagnostics(prev => ({ ...prev, lastError: error }));
-              alert(`Sync error: ${error?.message || error}`);
+              // `Sync error: ${error?.message || error}`);
             }
           }}
           className="w-full text-xs bg-indigo-500 text-white px-2 py-1 rounded"

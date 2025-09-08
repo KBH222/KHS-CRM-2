@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { customersApi, jobsApi, authApi } from '../services/api';
-import { toast } from 'react-toastify';
+// import { toast } from 'react-toastify';
 import { customerStorage } from '../services/localStorageService';
 import { ScrollablePageContainer } from '../components/ScrollablePageContainer';
 import { compressImage } from '../utils/imageCompression';
@@ -112,7 +112,7 @@ const CustomersEnhanced = () => {
     } catch (err: any) {
       console.error('[loadCustomers] Error:', err);
       const errorMessage = err.message || 'Failed to load customers';
-      toast.error('Failed to load customers: ' + errorMessage);
+      // Failed to load customers: errorMessage
       // Will fall back to localStorage in the API
     } finally {
       setIsLoading(false);
@@ -124,21 +124,21 @@ const CustomersEnhanced = () => {
     if (isSyncing) return;
     
     setIsSyncing(true);
-    toast.info('Syncing data with server...');
+    // Syncing data with server...
     
     try {
       const result = await enhancedSyncService.performFullSync();
       if (result.success) {
         const message = `Synced successfully! Pulled: ${result.pulled?.customers || 0} customers, ${result.pulled?.jobs || 0} jobs. Pushed: ${result.pushed?.customers || 0} customers, ${result.pushed?.jobs || 0} jobs.`;
-        toast.success(message);
+        // Success: message
         // Reload customers to show updated data
         await loadCustomers();
       } else {
-        toast.error('Sync failed: ' + (result.errors?.join(', ') || 'Unknown error'));
+        // Sync failed: (result.errors?.join(', ') || 'Unknown error')
       }
     } catch (error) {
       console.error('Sync failed:', error);
-      toast.error('Sync failed. Will retry automatically when online.');
+      // Sync failed. Will retry automatically when online.
     } finally {
       setIsSyncing(false);
     }
@@ -322,7 +322,7 @@ const CustomersEnhanced = () => {
       // Validate that we got a real ID back
       if (!customer.id || customer.id.includes('temp')) {
         console.error('[handleAddCustomer] WARNING: Got temp ID or no ID!');
-        toast.warning('Customer created but may need to refresh for proper ID');
+        // Customer created but may need to refresh for proper ID
       }
       
       // Use the server response with REAL ID
@@ -330,14 +330,14 @@ const CustomersEnhanced = () => {
       console.log('[handleAddCustomer] Updating customers list, new count:', updatedCustomers.length);
       setCustomers(updatedCustomers);
       
-      toast.success('Customer added successfully');
+      // Customer added successfully
       setShowModal(false);
       
       // If the new customer doesn't match current filter, switch to show all
       if (customerType && customer.customerType !== customerType) {
         console.log('[handleAddCustomer] Customer type mismatch, switching to show all');
         setCustomerType(null);
-        toast.info('Switched to "All Customers" to show the new customer');
+        // Switched to "All Customers" to show the new customer
       }
       
       // Force a reload to ensure the customer shows up
@@ -350,7 +350,7 @@ const CustomersEnhanced = () => {
     } catch (err: any) {
       console.error('[handleAddCustomer] Error:', err);
       const errorMessage = err.message || 'Failed to add customer';
-      toast.error('Failed to add customer: ' + errorMessage);
+      // Failed to add customer: errorMessage
       throw err;
     } finally {
       setIsLoading(false);
@@ -370,12 +370,12 @@ const CustomersEnhanced = () => {
       setCustomers(customers.map(c => 
         c.id === customer.id ? customer : c
       ));
-      toast.success('Customer updated successfully');
+      // Customer updated successfully
       setEditingCustomer(null);
       setShowModal(false);
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to update customer';
-      toast.error('Failed to update customer: ' + errorMessage);
+      // Failed to update customer: errorMessage
     } finally {
       setIsLoading(false);
     }
@@ -387,10 +387,10 @@ const CustomersEnhanced = () => {
         setIsLoading(true);
         await customersApi.delete(id);
         setCustomers(customers.filter(c => c.id !== id));
-        toast.success('Customer deleted successfully');
+        // Customer deleted successfully
       } catch (err: any) {
         const errorMessage = err.message || 'Failed to delete customer';
-        toast.error('Failed to delete customer: ' + errorMessage);
+        // Failed to delete customer: errorMessage
       } finally {
         setIsLoading(false);
       }
@@ -411,11 +411,11 @@ const CustomersEnhanced = () => {
       
       // Check for invalid customer ID (temp IDs)
       if (!customerId || customerId.toString().includes('temp')) {
-        toast.error('Cannot save job - customer not properly saved. Please refresh and try again.');
+        // 'Cannot save job - customer not properly saved. Please refresh and try again.');
         
         // If we have a temp customer, try to sync first
         if (customerId && customerId.includes('temp')) {
-          toast.info('Syncing customer data... Please wait and try again.');
+          // 'Syncing customer data... Please wait and try again.');
           await customersApi.sync();
         }
         return;
@@ -467,7 +467,7 @@ const CustomersEnhanced = () => {
           
           // Show success toast after modal closes
           setTimeout(() => {
-            toast.success('Job updated successfully', { autoClose: 2000 });
+            // 'Job updated successfully', { autoClose: 2000 });
           }, 100);
         } catch (apiError: any) {
           throw apiError;
@@ -514,7 +514,7 @@ const CustomersEnhanced = () => {
         
         // Show success toast after modal closes
         setTimeout(() => {
-          toast.success('Job updated successfully', { autoClose: 2000 });
+          // 'Job updated successfully', { autoClose: 2000 });
         }, 100);
       } else {
         // Create new job
@@ -564,7 +564,7 @@ const CustomersEnhanced = () => {
         
         // Show success toast after modal closes
         setTimeout(() => {
-          toast.success('Job created successfully', { autoClose: 2000 });
+          // 'Job created successfully', { autoClose: 2000 });
         }, 100);
       }
     } catch (err: any) {
@@ -581,7 +581,7 @@ const CustomersEnhanced = () => {
         errorMessage = err.message;
       }
       
-      toast.error(errorMessage);
+      // errorMessage);
       // Still close modal on error
       setShowAddJobModal(false);
       setSelectedCustomerForJob(null);
@@ -602,10 +602,10 @@ const CustomersEnhanced = () => {
           return customer;
         });
       });
-      toast.success('Job deleted successfully');
+      // 'Job deleted successfully');
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to delete job';
-      toast.error('Failed to delete job: ' + errorMessage);
+      // 'Failed to delete job: ' + errorMessage);
     }
   };
 
@@ -2071,7 +2071,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
     
     if (imageFiles.length === 0) {
-      toast.error('Please drop image files only');
+      // 'Please drop image files only');
       return;
     }
     
@@ -2107,7 +2107,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
     );
     
     if (validFiles.length === 0) {
-      toast.error('Please drop PDF, image, or document files only');
+      // 'Please drop PDF, image, or document files only');
       return;
     }
     
@@ -2119,12 +2119,12 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
   const processPhotoFiles = async (files: File[]) => {
     // Check if job has a title
     if (!jobData.title && !existingJob) {
-      toast.error('Please enter a job title first');
+      // 'Please enter a job title first');
       return;
     }
     
     // Show loading toast
-    const loadingToast = toast.info('Compressing photos...', { autoClose: 3000 });
+    const loadingToast = // 'Compressing photos...', { autoClose: 3000 });
     
     try {
       // First, compress and add all photos to local state
@@ -2146,14 +2146,14 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
         photos: [...prev.photos, ...newPhotos]
       }));
       
-      toast.dismiss(loadingToast);
-      toast.success(`${files.length} photo(s) added`);
+      // loadingToast);
+      // `${files.length} photo(s) added`);
       
       // Mark as having unsaved changes
       setUnsavedChanges(true);
     } catch (error) {
-      toast.dismiss(loadingToast);
-      toast.error('Failed to process some photos');
+      // loadingToast);
+      // 'Failed to process some photos');
     }
   };
 
@@ -2168,12 +2168,12 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
   const processPlanFiles = async (files: File[]) => {
     // Check if job has a title
     if (!jobData.title && !existingJob) {
-      toast.error('Please enter a job title first');
+      // 'Please enter a job title first');
       return;
     }
     
     // Show loading toast
-    const loadingToast = toast.info('Processing documents...', { autoClose: 3000 });
+    const loadingToast = // 'Processing documents...', { autoClose: 3000 });
     
     try {
       for (const file of files) {
@@ -2207,14 +2207,14 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
         }
       }
       
-      toast.dismiss(loadingToast);
-      toast.success(`${files.length} document(s) added`);
+      // loadingToast);
+      // `${files.length} document(s) added`);
       
       // Mark as having unsaved changes
       setUnsavedChanges(true);
     } catch (error) {
-      toast.dismiss(loadingToast);
-      toast.error('Failed to process some documents');
+      // loadingToast);
+      // 'Failed to process some documents');
     }
   };
 
@@ -2238,7 +2238,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
 
   // Safety check - ensure we have a customer
   if (!customer || !customer.id) {
-    toast.error('Error: No customer selected');
+    // 'Error: No customer selected');
     onClose();
     return null;
   }
@@ -2396,7 +2396,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
                         form.dispatchEvent(event);
                       }
                     } catch (error) {
-                      toast.error('Failed to save job');
+                      // 'Failed to save job');
                     }
                   }}
                   disabled={!jobData.title}
@@ -2701,7 +2701,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
                           // Unmark all completed tasks (remove strikethrough)
                           const completedCount = jobData.tasks.filter(t => t.completed).length;
                           if (completedCount === 0) {
-                            toast.info('No completed tasks to unmark');
+                            // 'No completed tasks to unmark');
                             return;
                           }
                           
@@ -2720,7 +2720,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
                           setSelectedTasks(new Set());
                           
                           setUnsavedChanges(true);
-                          toast.success(`${completedCount} task${completedCount > 1 ? 's' : ''} unmarked`);
+                          // `${completedCount} task${completedCount > 1 ? 's' : ''} unmarked`);
                         }}
                         style={{
                           padding: '6px 12px',
@@ -2746,7 +2746,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
                           }));
                           setSelectedTasks(new Set());
                           setUnsavedChanges(true);
-                          toast.success(`${deleteCount} task${deleteCount > 1 ? 's' : ''} deleted`);
+                          // `${deleteCount} task${deleteCount > 1 ? 's' : ''} deleted`);
                         }}
                         style={{
                           padding: '6px 12px',
@@ -3090,7 +3090,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
                           
                           // Mark as having unsaved changes
                           setUnsavedChanges(true);
-                          toast.info('Photo removed - click Save to update');
+                          // 'Photo removed - click Save to update');
                         }}
                         style={{
                           position: 'absolute',

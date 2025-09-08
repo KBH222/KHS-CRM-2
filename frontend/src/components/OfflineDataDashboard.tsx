@@ -144,7 +144,7 @@ const OfflineDataDashboard: React.FC = () => {
 
   const handleSelectiveSync = async () => {
     if (!isOnline) {
-      alert('You must be online to perform a sync.');
+      // 'You must be online to perform a sync.');
       return;
     }
 
@@ -155,15 +155,15 @@ const OfflineDataDashboard: React.FC = () => {
       const result = await syncService.forceSync();
       
       if (result.success) {
-        alert(`Sync completed successfully! Processed ${result.processed} operations with ${result.conflicts} conflicts.`);
+        // `Sync completed successfully! Processed ${result.processed} operations with ${result.conflicts} conflicts.`);
       } else {
-        alert(`Sync completed with errors. ${result.errors.length} operations failed.`);
+        // `Sync completed with errors. ${result.errors.length} operations failed.`);
       }
       
       await loadDashboardData();
     } catch (error) {
       // Selective sync failed
-      alert('Selective sync failed. Please try again.');
+      // 'Selective sync failed. Please try again.');
     } finally {
       setIsSyncing(false);
     }
@@ -173,11 +173,11 @@ const OfflineDataDashboard: React.FC = () => {
     setIsLoading(true);
     try {
       await offlineDataService.preloadCriticalData();
-      alert('Critical data has been preloaded for offline use.');
+      // 'Critical data has been preloaded for offline use.');
       await loadDashboardData();
     } catch (error) {
       // Failed to preload data
-      alert('Failed to preload data. Please try again.');
+      // 'Failed to preload data. Please try again.');
     } finally {
       setIsLoading(false);
     }

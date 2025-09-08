@@ -147,7 +147,7 @@ const Workers = () => {
       setModifiedDays(new Set()); // Clear modified days
       await loadWorkers();
     } catch (error) {
-      alert('Failed to save worker. Please try again.');
+      // Failed to save worker
     }
   };
 
