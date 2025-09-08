@@ -1954,7 +1954,8 @@ interface AddJobModalProps {
 
 const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete = null, onJobUpdate = null }: AddJobModalProps) => {
   
-  const [activeTab, setActiveTab] = useState('description');
+  // Set default tab based on whether this is a new job or existing job
+  const [activeTab, setActiveTab] = useState(existingJob ? 'lists' : 'description');
   const [currentJobId, setCurrentJobId] = useState(existingJob?.id || null);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
