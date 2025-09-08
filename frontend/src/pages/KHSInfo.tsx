@@ -349,7 +349,11 @@ return;
 
   const renderToolsList = () => {
     return (
-      <div style={{ padding: '20px' }}>
+      <div style={{ 
+        padding: '20px',
+        maxWidth: '800px',
+        margin: '0 auto'
+      }}>
         {/* Category Selection */}
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '40px', marginBottom: '16px' }}>
@@ -847,19 +851,19 @@ return;
         return renderToolsList();
       case 'SOP':
         return (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#6B7280' }}>
+          <div style={{ padding: '20px', textAlign: 'center', color: '#6B7280', maxWidth: '800px', margin: '0 auto' }}>
             <p style={{ fontSize: '18px' }}>Standard Operating Procedures - Coming Soon</p>
           </div>
         );
       case 'Office Docs':
         return (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#6B7280' }}>
+          <div style={{ padding: '20px', textAlign: 'center', color: '#6B7280', maxWidth: '800px', margin: '0 auto' }}>
             <p style={{ fontSize: '18px' }}>Office Documents - Coming Soon</p>
           </div>
         );
       case 'Specs':
         return (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#6B7280' }}>
+          <div style={{ padding: '20px', textAlign: 'center', color: '#6B7280', maxWidth: '800px', margin: '0 auto' }}>
             <p style={{ fontSize: '18px' }}>Specifications - Coming Soon</p>
           </div>
         );
@@ -876,9 +880,11 @@ return;
         borderBottom: '1px solid #E5E7EB',
         padding: '16px 20px',
       }}>
-        <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#111827' }}>
-          KHS Info
-        </h1>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#111827' }}>
+            KHS Info
+          </h1>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -886,29 +892,34 @@ return;
         backgroundColor: 'white',
         borderBottom: '1px solid #E5E7EB',
         padding: '0 20px',
-        display: 'flex',
-        gap: '24px',
-        overflowX: 'auto',
       }}>
-        {tabs.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: '16px 0',
-              border: 'none',
-              backgroundColor: 'transparent',
-              color: activeTab === tab ? '#3B82F6' : '#6B7280',
-              fontSize: '18px',
-              fontWeight: activeTab === tab ? '600' : '400',
-              cursor: 'pointer',
-              borderBottom: activeTab === tab ? '2px solid #3B82F6' : '2px solid transparent',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+        <div style={{
+          maxWidth: '800px',
+          margin: '0 auto',
+          display: 'flex',
+          gap: '24px',
+          overflowX: 'auto',
+        }}>
+          {tabs.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: '16px 0',
+                border: 'none',
+                backgroundColor: 'transparent',
+                color: activeTab === tab ? '#3B82F6' : '#6B7280',
+                fontSize: '18px',
+                fontWeight: activeTab === tab ? '600' : '400',
+                cursor: 'pointer',
+                borderBottom: activeTab === tab ? '2px solid #3B82F6' : '2px solid transparent',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab Content */}
