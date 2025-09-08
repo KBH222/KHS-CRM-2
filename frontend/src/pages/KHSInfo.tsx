@@ -215,7 +215,6 @@ const KHSInfo = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [tools, setTools] = useState<CategoryTools>({});
   const [isLocked, setIsLocked] = useState(false);
-  const [newToolName, setNewToolName] = useState('');
   const [showDemo, setShowDemo] = useState(false);
   const [showInstall, setShowInstall] = useState(false);
   const [showRepair, setShowRepair] = useState(false);
@@ -223,7 +222,7 @@ const KHSInfo = () => {
   const [draggedCategory, setDraggedCategory] = useState<string | null>(null);
   const [dragOverToolId, setDragOverToolId] = useState<string | null>(null);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
-  const [newToolCategory, setNewToolCategory] = useState<string>('');
+  const [newToolNames, setNewToolNames] = useState<{[category: string]: string}>({});
 
   const tabs = ['Tools List', 'SOP', 'Office Docs', 'Specs'];
   const demoCategories = ['Kitchen', 'Bathroom', 'Flooring', 'Framing', 'Drywall'];
@@ -299,13 +298,14 @@ return;
   };
 
   const handleAddTool = (category: string) => {
-    if (!newToolName.trim() || isLocked) {
-return;
-}
+    const toolName = newToolNames[category] || '';
+    if (!toolName.trim() || isLocked) {
+      return;
+    }
 
     const newTool: Tool = {
       id: `custom-${Date.now()}`,
-      name: newToolName.trim(),
+      name: toolName.trim(),
       checked: false,
       custom: true,
     };
@@ -315,7 +315,10 @@ return;
       [category]: [...(prev[category] || []), newTool],
     }));
 
-    setNewToolName('');
+    setNewToolNames(prev => ({
+      ...prev,
+      [category]: ''
+    }));
   };
 
   const handleDeleteTool = (category: string, toolId: string) => {
@@ -571,78 +574,6 @@ return;
           )}
         </div>
 
-        {/* Global Add Tool Input */}
-        {(showDemo || showInstall || showRepair) && selectedCategories.length > 0 && !isLocked && (
-          <div style={{
-            backgroundColor: 'white',
-            border: '1px solid #E5E7EB',
-            borderRadius: '8px',
-            padding: '16px',
-            marginBottom: '24px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-          }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <select
-                value={newToolCategory || selectedCategories[0]}
-                onChange={(e) => setNewToolCategory(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  fontSize: '15px',
-                  backgroundColor: 'white',
-                  minWidth: '150px'
-                }}
-              >
-                {selectedCategories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              <input
-                type="text"
-                value={newToolName}
-                onChange={(e) => setNewToolName(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && (newToolCategory || selectedCategories[0])) {
-                    handleAddTool(newToolCategory || selectedCategories[0]);
-                  }
-                }}
-                placeholder="Add a tool..."
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  fontSize: '15px',
-                  outline: 'none',
-                  transition: 'border-color 0.2s'
-                }}
-                onFocus={(e) => e.currentTarget.style.borderColor = '#3B82F6'}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#E5E7EB'}
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (newToolCategory || selectedCategories[0]) {
-                    handleAddTool(newToolCategory || selectedCategories[0]);
-                  }
-                }}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#3B82F6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '500',
-                }}
-              >
-                Add
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Selected Categories Tools */}
         {!showDemo && !showInstall && !showRepair ? null : selectedCategories.length === 0 ? (
@@ -711,6 +642,62 @@ return;
                   </button>
                 </div>
               </div>
+
+              {/* Add Tool Input for this category */}
+              {!isLocked && (
+                <div style={{
+                  backgroundColor: '#F9FAFB',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '6px',
+                  padding: '12px',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  gap: '8px',
+                  alignItems: 'center'
+                }}>
+                  <input
+                    type="text"
+                    value={newToolNames[category] || ''}
+                    onChange={(e) => setNewToolNames(prev => ({
+                      ...prev,
+                      [category]: e.target.value
+                    }))}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddTool(category);
+                      }
+                    }}
+                    placeholder="Add a tool..."
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      outline: 'none',
+                      transition: 'border-color 0.2s'
+                    }}
+                    onFocus={(e) => e.currentTarget.style.borderColor = '#3B82F6'}
+                    onBlur={(e) => e.currentTarget.style.borderColor = '#E5E7EB'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddTool(category)}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#3B82F6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                    }}
+                  >
+                    Add
+                  </button>
+                </div>
+              )}
 
               <div style={{ marginBottom: '16px' }}>
                 {tools[category]?.map((tool, index) => (
