@@ -1,2 +1,2 @@
-Trigger Railway deployment - 2025-09-08 08:30:00
-Fix: Dynamic import error and schedule UI updates
+Trigger Railway deployment - 2025-09-08 21:15:00
+Force deployment: GitHub webhook verification
