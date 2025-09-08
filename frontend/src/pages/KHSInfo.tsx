@@ -802,7 +802,7 @@ return;
                     }}>
                       {tool.name}
                     </span>
-                    {tool.custom && !isLocked && (
+                    {!isLocked && (
                       <button
                         type="button"
                         onClick={() => handleDeleteTool(category, tool.id)}
