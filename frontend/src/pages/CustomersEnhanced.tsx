@@ -756,7 +756,7 @@ const CustomersEnhanced = () => {
                 width: '18px',
                 height: '18px',
                 cursor: 'pointer',
-                accentColor: '#10B981'
+                accentColor: '#3B82F6'
               }}
             />
             Current
@@ -779,7 +779,7 @@ const CustomersEnhanced = () => {
                 width: '18px',
                 height: '18px',
                 cursor: 'pointer',
-                accentColor: '#F59E0B'
+                accentColor: '#3B82F6'
               }}
             />
             Leads
