@@ -652,10 +652,7 @@ return;
                   border: '1px solid #E5E7EB',
                   borderRadius: '6px',
                   padding: '12px',
-                  marginBottom: '16px',
-                  display: 'flex',
-                  gap: '8px',
-                  alignItems: 'center'
+                  marginBottom: '16px'
                 }}>
                   <input
                     type="text"
@@ -669,9 +666,9 @@ return;
                         handleAddTool(category);
                       }
                     }}
-                    placeholder="Add a tool..."
+                    placeholder="Add a tool (press Enter)..."
                     style={{
-                      flex: 1,
+                      width: '100%',
                       padding: '8px 12px',
                       border: '1px solid #E5E7EB',
                       borderRadius: '4px',
@@ -682,22 +679,6 @@ return;
                     onFocus={(e) => e.currentTarget.style.borderColor = '#3B82F6'}
                     onBlur={(e) => e.currentTarget.style.borderColor = '#E5E7EB'}
                   />
-                  <button
-                    type="button"
-                    onClick={() => handleAddTool(category)}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#3B82F6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                    }}
-                  >
-                    Add
-                  </button>
                 </div>
               )}
 
