@@ -341,17 +341,36 @@ const Profile = () => {
                   Business Logo
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '8px',
-                    border: '2px dashed #E5E7EB',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#F9FAFB',
-                    overflow: 'hidden'
-                  }}>
+                  <div 
+                    onClick={() => {
+                      if (editMode) {
+                        document.getElementById('logo-upload')?.click();
+                      }
+                    }}
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '8px',
+                      border: '2px dashed #E5E7EB',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: '#F9FAFB',
+                      overflow: 'hidden',
+                      cursor: editMode ? 'pointer' : 'default',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (editMode) {
+                        e.currentTarget.style.borderColor = '#3B82F6';
+                        e.currentTarget.style.backgroundColor = '#EFF6FF';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#E5E7EB';
+                      e.currentTarget.style.backgroundColor = '#F9FAFB';
+                    }}
+                  >
                     {profile.businessLogo ? (
                       <img 
                         src={profile.businessLogo} 
@@ -360,7 +379,7 @@ const Profile = () => {
                       />
                     ) : (
                       <span style={{ color: '#9CA3AF', fontSize: '14px', textAlign: 'center' }}>
-                        No Logo
+                        {editMode ? 'Click to\nUpload' : 'No Logo'}
                       </span>
                     )}
                   </div>
