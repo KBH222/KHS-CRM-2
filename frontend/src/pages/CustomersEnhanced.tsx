@@ -2268,7 +2268,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
         position: 'relative'  // Add for proper iOS positioning
       }}>
         <div style={{
-          padding: '20px',
+          padding: '16px 20px 12px',
           borderBottom: '1px solid #E5E7EB'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
@@ -2289,7 +2289,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
                 )}
               </h2>
               <div style={{ 
-                margin: '4px 0 0 0', 
+                margin: '2px 0 0 0', 
                 color: '#6B7280', 
                 fontSize: '16.1px',
                 whiteSpace: 'nowrap',
@@ -2331,9 +2331,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
                 })()}
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'flex-end' }}>
-              {/* Top row: Add and Cancel buttons */}
-              <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 {/* Dynamic Add button based on active tab */}
                 {(activeTab === 'photos' || activeTab === 'plans') && (
                   <>
@@ -2386,39 +2384,35 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
                 >
                   Cancel
                 </button>
-              </div>
-              
-              {/* Bottom row: Save button */}
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    // Always use form submit for all tabs to ensure consistent save behavior
-                    const event = new Event('submit', { bubbles: true, cancelable: true });
-                    const form = document.querySelector('form');
-                    if (form) {
-                      form.dispatchEvent(event);
+                {/* Save button - moved next to Cancel */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      // Always use form submit for all tabs to ensure consistent save behavior
+                      const event = new Event('submit', { bubbles: true, cancelable: true });
+                      const form = document.querySelector('form');
+                      if (form) {
+                        form.dispatchEvent(event);
+                      }
+                    } catch (error) {
+                      toast.error('Failed to save job');
                     }
-                  } catch (error) {
-                    toast.error('Failed to save job');
-                  }
-                }}
-                disabled={!jobData.title}
-                style={{
-                  padding: '8px 20px',
-                  backgroundColor: jobData.title ? '#10B981' : '#9CA3AF',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: jobData.title ? 'pointer' : 'not-allowed',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  width: '100%',
-                  maxWidth: '120px'
-                }}
-              >
-                Save
-              </button>
+                  }}
+                  disabled={!jobData.title}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: jobData.title ? '#10B981' : '#9CA3AF',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: jobData.title ? 'pointer' : 'not-allowed',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
+                >
+                  Save
+                </button>
             </div>
           </div>
         </div>
@@ -2480,59 +2474,59 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
             {/* Job Info Tab */}
             {activeTab === 'description' && (
               <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                {/* Job Type Selection */}
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                {/* Job Type Selection - All on one line */}
+                <div style={{ 
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px',
+                  backgroundColor: '#F9FAFB',
+                  borderRadius: '6px',
+                  border: '1px solid #E5E7EB'
+                }}>
+                  <span style={{ fontWeight: '600', fontSize: '16px', flexShrink: 0 }}>
                     Job *
-                  </label>
-                  <div style={{ 
-                    display: 'flex', 
-                    gap: '16px',
-                    flexWrap: 'wrap',
-                    padding: '12px',
-                    backgroundColor: '#F9FAFB',
-                    borderRadius: '6px',
-                    border: '1px solid #E5E7EB'
-                  }}>
-                    {['Kitchen', 'Bathroom', 'Flooring', 'Various Repairs', 'Other'].map(type => (
-                      <label key={type} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        fontSize: '16px'
-                      }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedJobTypes.includes(type)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedJobTypes([...selectedJobTypes, type]);
-                              // Update combined title
-                              const newTypes = [...selectedJobTypes, type];
-                              setJobData({ ...jobData, title: newTypes.join(' & ') });
-                            } else {
-                              const newTypes = selectedJobTypes.filter(t => t !== type);
-                              setSelectedJobTypes(newTypes);
-                              // Remove description for unchecked type
-                              const newDescriptions = { ...jobDescriptions };
-                              delete newDescriptions[type];
-                              setJobDescriptions(newDescriptions);
-                              // Update combined title
-                              setJobData({ ...jobData, title: newTypes.join(' & ') });
-                            }
-                          }}
-                          style={{
-                            marginRight: '8px',
-                            width: '18px',
-                            height: '18px',
-                            cursor: 'pointer',
-                            accentColor: '#3B82F6'
-                          }}
-                        />
-                        {type}
-                      </label>
-                    ))}
-                  </div>
+                  </span>
+                  {['Kitchen', 'Bathroom', 'Flooring', 'Various Repairs', 'Other'].map(type => (
+                    <label key={type} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                      fontSize: '15px',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedJobTypes.includes(type)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedJobTypes([...selectedJobTypes, type]);
+                            // Update combined title
+                            const newTypes = [...selectedJobTypes, type];
+                            setJobData({ ...jobData, title: newTypes.join(' & ') });
+                          } else {
+                            const newTypes = selectedJobTypes.filter(t => t !== type);
+                            setSelectedJobTypes(newTypes);
+                            // Remove description for unchecked type
+                            const newDescriptions = { ...jobDescriptions };
+                            delete newDescriptions[type];
+                            setJobDescriptions(newDescriptions);
+                            // Update combined title
+                            setJobData({ ...jobData, title: newTypes.join(' & ') });
+                          }
+                        }}
+                        style={{
+                          marginRight: '6px',
+                          width: '16px',
+                          height: '16px',
+                          cursor: 'pointer',
+                          accentColor: '#3B82F6'
+                        }}
+                      />
+                      {type}
+                    </label>
+                  ))}
                 </div>
 
                 {/* Scrollable Descriptions Section */}
