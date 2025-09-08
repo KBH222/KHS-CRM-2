@@ -459,66 +459,22 @@ const ScheduleCalendar = () => {
           onDragOver={(e) => handleDragOver(e, date)}
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, date)}
-          onClick={() => {
-            // Click on date number or + button to add
+          onClick={(e) => {
+            // Don't open modal if clicking on an event
+            if (e.target === e.currentTarget || e.target.classList.contains('day-number')) {
+              handleDateClick(date);
+            }
           }}
         >
           <div style={{ 
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '4px'
+            fontWeight: '600',
+            color: isToday ? '#92400E' : '#374151',
+            marginBottom: '4px',
+            className: 'day-number'
           }}>
-            <div style={{ 
-              fontWeight: '600',
-              color: isToday ? '#92400E' : '#374151'
-            }}>
-              {day}
-            </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDateClick(date);
-              }}
-              style={{
-                width: '20px',
-                height: '20px',
-                padding: 0,
-                backgroundColor: 'transparent',
-                border: '1px solid #E5E7EB',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '13.8px',
-                color: '#6B7280',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#3B82F6';
-                e.currentTarget.style.borderColor = '#3B82F6';
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.borderColor = '#E5E7EB';
-                e.currentTarget.style.color = '#6B7280';
-              }}
-              title="Add job for this date"
-            >
-              +
-            </button>
+            {day}
           </div>
-          <div 
-            style={{ fontSize: '13.8px' }}
-            onClick={(e) => {
-              if (quickAddDate?.toDateString() !== date.toDateString()) {
-                e.stopPropagation();
-                handleDateClick(date);
-              }
-            }}
-          >
+          <div style={{ fontSize: '13.8px' }}>
             
             {dayJobs.slice(0, 2).map((job, index) => (
               <div key={job.id} style={{ position: 'relative' }}>
