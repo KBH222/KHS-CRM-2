@@ -343,8 +343,11 @@ const Profile = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div 
                     onClick={() => {
+                      console.log('Logo div clicked, editMode:', editMode);
                       if (editMode) {
-                        document.getElementById('logo-upload')?.click();
+                        const fileInput = document.getElementById('logo-upload');
+                        console.log('File input element:', fileInput);
+                        fileInput?.click();
                       }
                     }}
                     style={{
@@ -378,9 +381,26 @@ const Profile = () => {
                         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                       />
                     ) : (
-                      <span style={{ color: '#9CA3AF', fontSize: '14px', textAlign: 'center' }}>
-                        {editMode ? 'Click to\nUpload' : 'No Logo'}
-                      </span>
+                      <div style={{ 
+                        color: '#9CA3AF', 
+                        fontSize: '14px', 
+                        textAlign: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        {editMode ? (
+                          <>
+                            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            <span>Click to Upload</span>
+                          </>
+                        ) : (
+                          'No Logo'
+                        )}
+                      </div>
                     )}
                   </div>
                   {editMode && (
