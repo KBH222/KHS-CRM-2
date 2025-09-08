@@ -2124,7 +2124,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
     }
     
     // Show loading toast
-    const loadingToast = // 'Compressing photos...', { autoClose: 3000 });
+    // const loadingToast = toast.info('Compressing photos...', { autoClose: 3000 });
     
     try {
       // First, compress and add all photos to local state
@@ -2146,13 +2146,13 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
         photos: [...prev.photos, ...newPhotos]
       }));
       
-      // loadingToast);
+      // toast.dismiss(loadingToast);
       // `${files.length} photo(s) added`);
       
       // Mark as having unsaved changes
       setUnsavedChanges(true);
     } catch (error) {
-      // loadingToast);
+      // toast.dismiss(loadingToast);
       // 'Failed to process some photos');
     }
   };
@@ -2173,7 +2173,7 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
     }
     
     // Show loading toast
-    const loadingToast = // 'Processing documents...', { autoClose: 3000 });
+    // const loadingToast = toast.info('Processing documents...', { autoClose: 3000 });
     
     try {
       for (const file of files) {
@@ -2207,13 +2207,13 @@ const AddJobModal = ({ customer, onClose, onSave, existingJob = null, onDelete =
         }
       }
       
-      // loadingToast);
+      // toast.dismiss(loadingToast);
       // `${files.length} document(s) added`);
       
       // Mark as having unsaved changes
       setUnsavedChanges(true);
     } catch (error) {
-      // loadingToast);
+      // toast.dismiss(loadingToast);
       // 'Failed to process some documents');
     }
   };
