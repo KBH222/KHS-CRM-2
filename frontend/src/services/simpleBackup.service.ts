@@ -25,7 +25,6 @@ class SimpleBackupService {
       console.log('[SimpleBackup] Customers from IndexedDB:', customers.length, customers);
       
       // Get jobs directly from IndexedDB to avoid localStorage issues
-      const { offlineDb } = await import('./db.service');
       const allJobs = await offlineDb.getJobs();
       
       // Filter jobs to only include those for active customers
