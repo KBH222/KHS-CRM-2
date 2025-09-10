@@ -98,8 +98,7 @@ class SyncBackupService {
     try {
       console.log('[SyncBackup] Creating pre-sync snapshot...');
       
-      // Gather all data from IndexedDB
-      const mainDb = await openDB('khs-crm-db', 1);
+      // Gather all data from IndexedDB (primary storage in this app)
       const data = {
         customers: [],
         jobs: [],
@@ -109,21 +108,48 @@ class SyncBackupService {
         settings: {}
       };
 
-      // Collect data from all stores
-      if (mainDb.objectStoreNames.contains('customers')) {
-        data.customers = await mainDb.getAll('customers');
+      // Read from IndexedDB which is the primary storage
+      try {
+        const mainDb = await openDB('khs-crm-db', 1);
+        
+        // Collect data from IndexedDB stores
+        if (mainDb.objectStoreNames.contains('customers')) {
+          data.customers = await mainDb.getAll('customers');
+          console.log('[SyncBackup] Read customers from IndexedDB:', data.customers.length);
+        }
+        if (mainDb.objectStoreNames.contains('jobs')) {
+          data.jobs = await mainDb.getAll('jobs');
+          console.log('[SyncBackup] Read jobs from IndexedDB:', data.jobs.length);
+        }
+        if (mainDb.objectStoreNames.contains('materials')) {
+          data.materials = await mainDb.getAll('materials');
+        }
+        if (mainDb.objectStoreNames.contains('scheduleEvents')) {
+          data.scheduleEvents = await mainDb.getAll('scheduleEvents');
+        }
+        
+        mainDb.close();
+      } catch (error) {
+        console.error('[SyncBackup] Failed to read from IndexedDB:', error);
       }
-      if (mainDb.objectStoreNames.contains('jobs')) {
-        data.jobs = await mainDb.getAll('jobs');
-      }
-      if (mainDb.objectStoreNames.contains('workers')) {
-        data.workers = await mainDb.getAll('workers');
-      }
-      if (mainDb.objectStoreNames.contains('materials')) {
-        data.materials = await mainDb.getAll('materials');
-      }
-      if (mainDb.objectStoreNames.contains('scheduleEvents')) {
-        data.scheduleEvents = await mainDb.getAll('scheduleEvents');
+
+      // Workers are stored in localStorage
+      const workersData = localStorage.getItem('khs-crm-workers');
+      if (workersData) {
+        try {
+          // Handle both wrapped and unwrapped data formats
+          const parsed = JSON.parse(workersData);
+          if (Array.isArray(parsed)) {
+            data.workers = parsed;
+          } else if (parsed.data && Array.isArray(parsed.data)) {
+            data.workers = parsed.data;
+          } else {
+            data.workers = parsed;
+          }
+          console.log('[SyncBackup] Read workers from localStorage:', data.workers.length);
+        } catch (e) {
+          console.error('[SyncBackup] Failed to parse workers data:', e);
+        }
       }
 
       // Also backup localStorage data
@@ -227,48 +253,62 @@ class SyncBackupService {
       // First, create a backup of current state before restoring
       await this.createPreSyncSnapshot('Pre-restore backup');
 
-      // Clear existing data
-      const mainDb = await openDB('khs-crm-db', 1);
-      const tx = mainDb.transaction(
-        ['customers', 'jobs', 'workers', 'materials', 'scheduleEvents'],
-        'readwrite'
-      );
+      // Restore to IndexedDB (primary storage)
+      try {
+        const mainDb = await openDB('khs-crm-db', 1);
+        
+        // Restore customers
+        if (mainDb.objectStoreNames.contains('customers') && snapshot.data.customers.length > 0) {
+          const tx = mainDb.transaction(['customers'], 'readwrite');
+          await tx.objectStore('customers').clear();
+          for (const customer of snapshot.data.customers) {
+            await tx.objectStore('customers').add(customer);
+          }
+          await tx.complete;
+          console.log('[SyncBackup] Restored customers to IndexedDB:', snapshot.data.customers.length);
+        }
 
-      // Clear all stores
-      if (mainDb.objectStoreNames.contains('customers')) {
-        await tx.objectStore('customers').clear();
-      }
-      if (mainDb.objectStoreNames.contains('jobs')) {
-        await tx.objectStore('jobs').clear();
-      }
-      if (mainDb.objectStoreNames.contains('workers')) {
-        await tx.objectStore('workers').clear();
-      }
-      if (mainDb.objectStoreNames.contains('materials')) {
-        await tx.objectStore('materials').clear();
-      }
-      if (mainDb.objectStoreNames.contains('scheduleEvents')) {
-        await tx.objectStore('scheduleEvents').clear();
+        // Restore jobs
+        if (mainDb.objectStoreNames.contains('jobs') && snapshot.data.jobs.length > 0) {
+          const tx = mainDb.transaction(['jobs'], 'readwrite');
+          await tx.objectStore('jobs').clear();
+          for (const job of snapshot.data.jobs) {
+            await tx.objectStore('jobs').add(job);
+          }
+          await tx.complete;
+          console.log('[SyncBackup] Restored jobs to IndexedDB:', snapshot.data.jobs.length);
+        }
+
+        // Restore materials
+        if (mainDb.objectStoreNames.contains('materials') && snapshot.data.materials.length > 0) {
+          const tx = mainDb.transaction(['materials'], 'readwrite');
+          await tx.objectStore('materials').clear();
+          for (const material of snapshot.data.materials) {
+            await tx.objectStore('materials').add(material);
+          }
+          await tx.complete;
+        }
+
+        // Restore schedule events
+        if (mainDb.objectStoreNames.contains('scheduleEvents') && snapshot.data.scheduleEvents.length > 0) {
+          const tx = mainDb.transaction(['scheduleEvents'], 'readwrite');
+          await tx.objectStore('scheduleEvents').clear();
+          for (const event of snapshot.data.scheduleEvents) {
+            await tx.objectStore('scheduleEvents').add(event);
+          }
+          await tx.complete;
+        }
+
+        mainDb.close();
+      } catch (error) {
+        console.error('[SyncBackup] Error restoring IndexedDB data:', error);
       }
 
-      // Restore data
-      for (const customer of snapshot.data.customers) {
-        await tx.objectStore('customers').add(customer);
+      // Restore workers to localStorage (as they're stored there)
+      if (snapshot.data.workers && snapshot.data.workers.length > 0) {
+        localStorage.setItem('khs-crm-workers', JSON.stringify(snapshot.data.workers));
+        console.log('[SyncBackup] Restored workers to localStorage:', snapshot.data.workers.length);
       }
-      for (const job of snapshot.data.jobs) {
-        await tx.objectStore('jobs').add(job);
-      }
-      for (const worker of snapshot.data.workers) {
-        await tx.objectStore('workers').add(worker);
-      }
-      for (const material of snapshot.data.materials) {
-        await tx.objectStore('materials').add(material);
-      }
-      for (const event of snapshot.data.scheduleEvents) {
-        await tx.objectStore('scheduleEvents').add(event);
-      }
-
-      await tx.complete;
 
       // Restore localStorage data
       for (const [key, value] of Object.entries(snapshot.data.settings)) {
