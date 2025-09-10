@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { simpleBackupService } from '../services/simpleBackup.service';
+import { clearAllLocalStorage, debugLocalStorage } from '../utils/clearLocalStorage';
 
 export const SimpleBackupManager = () => {
   const [backups, setBackups] = useState<any[]>([]);
@@ -38,6 +39,17 @@ export const SimpleBackupManager = () => {
     loadBackups();
   };
 
+  const handleClearLocalStorage = () => {
+    if (window.confirm('This will clear ALL localStorage data and reload the page. Are you sure?')) {
+      clearAllLocalStorage();
+      window.location.reload();
+    }
+  };
+
+  const handleDebugStorage = () => {
+    debugLocalStorage();
+  };
+
   const formatDate = (timestamp: string) => {
     return new Date(timestamp).toLocaleString();
   };
@@ -54,6 +66,49 @@ export const SimpleBackupManager = () => {
         <p style={{ color: '#6B7280', marginBottom: '16px' }}>
           Create backups of your current data and restore them when needed.
         </p>
+        
+        {/* Debug buttons */}
+        <div style={{
+          marginBottom: '16px',
+          padding: '12px',
+          backgroundColor: '#FEF3C7',
+          borderRadius: '8px',
+          border: '1px solid #FCD34D'
+        }}>
+          <p style={{ fontSize: '14px', color: '#92400E', marginBottom: '8px' }}>
+            Debug Tools (Use with caution)
+          </p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={handleDebugStorage}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#6B7280',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              Show Storage Info
+            </button>
+            <button
+              onClick={handleClearLocalStorage}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#DC2626',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              Clear All Storage
+            </button>
+          </div>
+        </div>
 
         {/* Storage info and Create button */}
         <div style={{

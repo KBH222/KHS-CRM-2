@@ -1,5 +1,4 @@
 import { customersApi } from './api/customers.api';
-import { jobsApi } from './api/jobs.api';
 
 interface SimpleBackup {
   id: string;
@@ -24,18 +23,15 @@ class SimpleBackupService {
       const customers = await customersApi.getAll();
       console.log('[SimpleBackup] Customers from API:', customers.length, customers);
       
-      // Get all jobs using the jobs API
-      const allJobsFromAPI = await jobsApi.getAll();
-      console.log('[SimpleBackup] All jobs from jobsApi.getAll():', allJobsFromAPI.length, allJobsFromAPI);
+      // Get jobs directly from IndexedDB to avoid localStorage issues
+      const { offlineDb } = await import('./db.service');
+      const allJobs = await offlineDb.getJobs();
       
-      // Also get jobs for each customer to compare
-      const jobs = [];
-      for (const customer of customers) {
-        const customerJobs = await jobsApi.getByCustomerId(customer.id);
-        console.log(`[SimpleBackup] Jobs for customer ${customer.id}:`, customerJobs.length, customerJobs);
-        jobs.push(...customerJobs);
-      }
-      console.log('[SimpleBackup] Total jobs collected:', jobs.length, jobs);
+      // Filter jobs to only include those for active customers
+      const customerIds = new Set(customers.map(c => c.id));
+      const jobs = allJobs.filter(job => customerIds.has(job.customerId));
+      
+      console.log('[SimpleBackup] Jobs from IndexedDB:', allJobs.length, 'total,', jobs.length, 'for active customers');
       
       const workers = JSON.parse(localStorage.getItem('khs-crm-workers') || '[]');
       console.log('[SimpleBackup] Workers from localStorage:', workers.length, workers);
