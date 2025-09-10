@@ -60,7 +60,7 @@ const Profile = () => {
   });
 
   const [editMode, setEditMode] = useState(false);
-  const [activeTab, setActiveTab] = useState('personal');
+  const [activeTab, setActiveTab] = useState('business');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwords, setPasswords] = useState({
     current: '',
@@ -99,11 +99,9 @@ const Profile = () => {
   };
 
   const tabs = [
-    { id: 'personal', label: 'Personal Info', icon: '👤' },
-    { id: 'business', label: 'Business Info', icon: '🏢' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔' },
+    { id: 'business', label: 'Biz Info', icon: '🏢' },
+    { id: 'notifications', label: 'Alerts', icon: '🔔' },
     { id: 'settings', label: 'Settings', icon: '⚙️' },
-    { id: 'hours', label: 'Working Hours', icon: '🕐' },
     ...(isOwner ? [{ id: 'users', label: 'Users', icon: '👥' }] : []),
     { id: 'backup', label: 'Backup', icon: '💾' },
     { id: 'sync-backups', label: 'Sync History', icon: '🔄' },
