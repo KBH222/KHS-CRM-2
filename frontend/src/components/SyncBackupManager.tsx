@@ -22,6 +22,8 @@ export const SyncBackupManager = () => {
   const [storageInfo, setStorageInfo] = useState({ totalSizeMB: '0', count: 0 });
   const [showConfirmDialog, setShowConfirmDialog] = useState<string | null>(null);
   const [failedSyncBackupId, setFailedSyncBackupId] = useState<string | null>(null);
+  const [showCleanupDialog, setShowCleanupDialog] = useState(false);
+  const [cleanupResult, setCleanupResult] = useState<{ removed: number; kept: number } | null>(null);
 
   useEffect(() => {
     loadSnapshots();
@@ -111,6 +113,28 @@ export const SyncBackupManager = () => {
     }
   };
 
+  const handleCleanupDuplicates = async () => {
+    setShowCleanupDialog(false);
+    setIsLoading(true);
+    setCleanupResult(null);
+    
+    try {
+      const result = await syncBackupService.cleanupDuplicateCustomers();
+      setCleanupResult(result);
+      
+      // Reload page after cleanup to reflect changes
+      if (result.removed > 0) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Failed to cleanup duplicates:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleString();
@@ -165,22 +189,40 @@ export const SyncBackupManager = () => {
           <span style={{ fontSize: '14px', color: '#4B5563' }}>
             Storage: {storageInfo.totalSizeMB} MB ({storageInfo.count} backups)
           </span>
-          <button
-            onClick={handleCreateManualBackup}
-            disabled={isLoading}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#3B82F6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '14px',
-              cursor: isLoading ? 'default' : 'pointer',
-              opacity: isLoading ? 0.5 : 1
-            }}
-          >
-            Create Manual Backup
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={handleCreateManualBackup}
+              disabled={isLoading}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#3B82F6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                cursor: isLoading ? 'default' : 'pointer',
+                opacity: isLoading ? 0.5 : 1
+              }}
+            >
+              Create Manual Backup
+            </button>
+            <button
+              onClick={() => setShowCleanupDialog(true)}
+              disabled={isLoading}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#F59E0B',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                cursor: isLoading ? 'default' : 'pointer',
+                opacity: isLoading ? 0.5 : 1
+              }}
+            >
+              Clean Duplicates
+            </button>
+          </div>
         </div>
 
         {/* Failed sync alert */}
@@ -411,6 +453,91 @@ export const SyncBackupManager = () => {
               Please wait while we restore your data.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Cleanup dialog */}
+      {showCleanupDialog && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '400px',
+            width: '90%'
+          }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px' }}>
+              Clean Duplicate Customers
+            </h3>
+            <p style={{ color: '#4B5563', marginBottom: '20px' }}>
+              This will remove duplicate customer entries, keeping only the newest version of each customer. This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowCleanupDialog(false)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#E5E7EB',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCleanupDuplicates}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#F59E0B',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                Clean Duplicates
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cleanup result */}
+      {cleanupResult && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: cleanupResult.removed > 0 ? '#10B981' : '#3B82F6',
+          color: 'white',
+          padding: '16px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          zIndex: 1002
+        }}>
+          <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>
+            Cleanup Complete
+          </h4>
+          <p style={{ fontSize: '14px' }}>
+            {cleanupResult.removed > 0 
+              ? `Removed ${cleanupResult.removed} duplicates, kept ${cleanupResult.kept} customers. Page will reload...`
+              : `No duplicates found. ${cleanupResult.kept} customers in database.`}
+          </p>
         </div>
       )}
 

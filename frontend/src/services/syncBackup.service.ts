@@ -476,6 +476,107 @@ class SyncBackupService {
       console.error('[SyncBackup DEBUG] Error analyzing database:', error);
     }
   }
+
+  // Cleanup duplicate customers in database
+  async cleanupDuplicateCustomers(keepNewest = true) {
+    try {
+      console.log('[SyncBackup CLEANUP] Starting customer cleanup...');
+      
+      const mainDb = await openDB('khs-crm-offline', 3);
+      
+      if (!mainDb.objectStoreNames.contains('customers')) {
+        console.log('[SyncBackup CLEANUP] No customers store found');
+        return { removed: 0, kept: 0 };
+      }
+
+      // Get all customers
+      const allCustomers = await mainDb.getAll('customers');
+      console.log('[SyncBackup CLEANUP] Found', allCustomers.length, 'total customers');
+
+      // Group customers by name
+      const customerGroups = new Map<string, any[]>();
+      for (const customer of allCustomers) {
+        const name = customer.name.toLowerCase().trim();
+        if (!customerGroups.has(name)) {
+          customerGroups.set(name, []);
+        }
+        customerGroups.get(name)!.push(customer);
+      }
+
+      // Find duplicates and decide which to keep
+      const customersToDelete: string[] = [];
+      const customersToKeep: any[] = [];
+
+      for (const [name, customers] of customerGroups) {
+        if (customers.length === 1) {
+          // No duplicates
+          customersToKeep.push(customers[0]);
+        } else {
+          // Sort by creation date or ID
+          customers.sort((a, b) => {
+            // Try to sort by createdAt first
+            if (a.createdAt && b.createdAt) {
+              return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            }
+            // Fallback to ID comparison (newer IDs are usually longer/later)
+            return b.id.localeCompare(a.id);
+          });
+
+          // Keep the newest (first after sort) or oldest (last after sort)
+          const keepIndex = keepNewest ? 0 : customers.length - 1;
+          customersToKeep.push(customers[keepIndex]);
+
+          // Mark others for deletion
+          for (let i = 0; i < customers.length; i++) {
+            if (i !== keepIndex) {
+              customersToDelete.push(customers[i].id);
+            }
+          }
+
+          console.log(`[SyncBackup CLEANUP] Found ${customers.length} customers named "${customers[0].name}"`);
+          console.log(`  Keeping: ID ${customers[keepIndex].id} (${customers[keepIndex].customerType})`);
+          console.log(`  Removing:`, customers.filter((_, i) => i !== keepIndex).map(c => `${c.id} (${c.customerType})`));
+        }
+      }
+
+      // Delete duplicate customers
+      if (customersToDelete.length > 0) {
+        const tx = mainDb.transaction('customers', 'readwrite');
+        for (const id of customersToDelete) {
+          await tx.objectStore('customers').delete(id);
+        }
+        await tx.done;
+        console.log(`[SyncBackup CLEANUP] Deleted ${customersToDelete.length} duplicate customers`);
+      }
+
+      // Also clean up jobs for deleted customers
+      if (mainDb.objectStoreNames.contains('jobs') && customersToDelete.length > 0) {
+        const allJobs = await mainDb.getAll('jobs');
+        const jobsToDelete = allJobs.filter(job => customersToDelete.includes(job.customerId));
+        
+        if (jobsToDelete.length > 0) {
+          const tx = mainDb.transaction('jobs', 'readwrite');
+          for (const job of jobsToDelete) {
+            await tx.objectStore('jobs').delete(job.id);
+          }
+          await tx.done;
+          console.log(`[SyncBackup CLEANUP] Deleted ${jobsToDelete.length} orphaned jobs`);
+        }
+      }
+
+      mainDb.close();
+
+      console.log(`[SyncBackup CLEANUP] Cleanup complete. Kept ${customersToKeep.length} customers, removed ${customersToDelete.length} duplicates`);
+
+      return {
+        removed: customersToDelete.length,
+        kept: customersToKeep.length
+      };
+    } catch (error) {
+      console.error('[SyncBackup CLEANUP] Error during cleanup:', error);
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance
