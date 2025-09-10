@@ -48,6 +48,9 @@ const queryClient = new QueryClient({
   },
 });
 
+// Store query client globally for debugging
+(window as any).__REACT_QUERY_CLIENT__ = queryClient;
+
 function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [needsAuthSetup, setNeedsAuthSetup] = useState(false);
@@ -63,10 +66,17 @@ function App() {
         await initializeServices();
         setIsInitialized(true);
         
-        // If we restored data, we need to refresh the page one more time
-        // to ensure React Query picks up the new data
+        // If we restored data, clear React Query cache to force refetch
         if (hadPendingRestore) {
-          setTimeout(() => window.location.reload(), 100);
+          console.log('[App] Restore detected, clearing React Query cache');
+          queryClient.clear();
+          queryClient.invalidateQueries();
+          
+          // Give React Query time to refetch
+          setTimeout(() => {
+            console.log('[App] Reloading after restore');
+            window.location.reload();
+          }, 500);
         }
       } catch (error) {
         // Failed to initialize application

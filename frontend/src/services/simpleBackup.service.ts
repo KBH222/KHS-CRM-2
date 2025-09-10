@@ -96,13 +96,29 @@ class SimpleBackupService {
         return false;
       }
       
-      // Clear current data and replace with backup
-      // This is a simple approach - just reload the page after setting data
+      console.log('[SimpleBackup] Found backup with data:', {
+        customers: backup.data.customers.length,
+        jobs: backup.data.jobs.length,
+        workers: backup.data.workers.length
+      });
       
       // Store the backup data to be restored
       localStorage.setItem('khs-crm-pending-restore', JSON.stringify(backup.data));
+      console.log('[SimpleBackup] Stored pending restore data');
+      
+      // Clear React Query cache before reloading
+      try {
+        const queryClient = (window as any).__REACT_QUERY_CLIENT__;
+        if (queryClient) {
+          queryClient.clear();
+          console.log('[SimpleBackup] Cleared React Query cache');
+        }
+      } catch (e) {
+        console.log('[SimpleBackup] Could not clear React Query cache');
+      }
       
       // Reload the page - the init logic will handle the restore
+      console.log('[SimpleBackup] Reloading page...');
       window.location.reload();
       
       return true;
@@ -120,9 +136,14 @@ class SimpleBackupService {
         return false;
       }
       
-      console.log('[SimpleBackup] Applying pending restore...');
+      console.log('[SimpleBackup] Found pending restore data');
       
       const data = JSON.parse(pendingRestore);
+      console.log('[SimpleBackup] Pending restore contains:', {
+        customers: data.customers?.length || 0,
+        jobs: data.jobs?.length || 0,
+        workers: data.workers?.length || 0
+      });
       
       // Clear the pending restore flag first
       localStorage.removeItem('khs-crm-pending-restore');
@@ -131,27 +152,35 @@ class SimpleBackupService {
       const { offlineDb } = await import('./db.service');
       
       // Clear existing data
+      console.log('[SimpleBackup] Clearing existing data...');
       await offlineDb.clearAllData();
       
       // Restore customers
       if (data.customers && data.customers.length > 0) {
         console.log('[SimpleBackup] Restoring', data.customers.length, 'customers');
         await offlineDb.bulkSaveCustomers(data.customers);
+        console.log('[SimpleBackup] Customers restored');
       }
       
       // Restore jobs
       if (data.jobs && data.jobs.length > 0) {
         console.log('[SimpleBackup] Restoring', data.jobs.length, 'jobs');
         await offlineDb.bulkSaveJobs(data.jobs);
+        console.log('[SimpleBackup] Jobs restored');
       }
       
       // Restore workers
       if (data.workers && data.workers.length > 0) {
         console.log('[SimpleBackup] Restoring', data.workers.length, 'workers');
         localStorage.setItem('khs-crm-workers', JSON.stringify(data.workers));
+        console.log('[SimpleBackup] Workers restored');
       }
       
-      console.log('[SimpleBackup] Restore complete');
+      // Also clear any stale localStorage data that might interfere
+      localStorage.removeItem('khs-crm-jobs'); // Remove stale jobs cache
+      localStorage.removeItem('khs-crm-customers'); // Remove stale customers cache
+      
+      console.log('[SimpleBackup] Restore complete, data should be available');
       return true;
     } catch (error) {
       console.error('[SimpleBackup] Failed to apply pending restore:', error);
