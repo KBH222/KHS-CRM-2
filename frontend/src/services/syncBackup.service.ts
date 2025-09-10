@@ -448,12 +448,14 @@ class SyncBackupService {
   // Debug function to analyze database contents
   async debugDatabaseContents() {
     try {
+      console.log('[SyncBackup DEBUG] ========== DATABASE ANALYSIS ==========');
+      
+      // Check IndexedDB
       const mainDb = await openDB('khs-crm-offline', 3);
       
       if (mainDb.objectStoreNames.contains('customers')) {
         const allCustomers = await mainDb.getAll('customers');
-        console.log('[SyncBackup DEBUG] Total customers in DB:', allCustomers.length);
-        console.log('[SyncBackup DEBUG] Customer breakdown:');
+        console.log('[SyncBackup DEBUG] IndexedDB customers:', allCustomers.length);
         
         const temp = allCustomers.filter(c => c.id && c.id.toString().startsWith('temp_'));
         const permanent = allCustomers.filter(c => c.id && !c.id.toString().startsWith('temp_'));
@@ -465,15 +467,79 @@ class SyncBackupService {
         console.log('- Current customers:', current.length);
         console.log('- Lead customers:', leads.length);
         
-        console.log('[SyncBackup DEBUG] All customer IDs and names:');
-        allCustomers.forEach(c => {
-          console.log(`  ID: ${c.id}, Name: ${c.name}, Type: ${c.customerType || 'CURRENT'}`);
-        });
+        if (allCustomers.length > 0) {
+          console.log('[SyncBackup DEBUG] Customer details:');
+          allCustomers.forEach(c => {
+            console.log(`  ID: ${c.id}, Name: ${c.name}, Type: ${c.customerType || 'CURRENT'}`);
+          });
+        }
       }
       
       mainDb.close();
+      
+      // Also check localStorage for any customer data
+      console.log('[SyncBackup DEBUG] Checking localStorage...');
+      const localStorageKeys = Object.keys(localStorage).filter(key => key.includes('customer'));
+      console.log('Customer-related localStorage keys:', localStorageKeys);
+      
+      localStorageKeys.forEach(key => {
+        const value = localStorage.getItem(key);
+        if (value) {
+          try {
+            const parsed = JSON.parse(value);
+            console.log(`  ${key}:`, Array.isArray(parsed) ? `Array(${parsed.length})` : typeof parsed);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              console.log(`    Sample:`, parsed[0]);
+            }
+          } catch (e) {
+            console.log(`  ${key}: (not JSON)`);
+          }
+        }
+      });
+      
+      console.log('[SyncBackup DEBUG] ========== END ANALYSIS ==========');
     } catch (error) {
       console.error('[SyncBackup DEBUG] Error analyzing database:', error);
+    }
+  }
+
+  // Clear all customers from database
+  async clearAllCustomers() {
+    try {
+      console.log('[SyncBackup CLEAR] Starting complete customer cleanup...');
+      
+      const mainDb = await openDB('khs-crm-offline', 3);
+      
+      if (!mainDb.objectStoreNames.contains('customers')) {
+        console.log('[SyncBackup CLEAR] No customers store found');
+        return { removed: 0 };
+      }
+
+      // Get count before clearing
+      const allCustomers = await mainDb.getAll('customers');
+      const count = allCustomers.length;
+      
+      // Clear all customers
+      const tx = mainDb.transaction('customers', 'readwrite');
+      await tx.objectStore('customers').clear();
+      await tx.done;
+      
+      console.log(`[SyncBackup CLEAR] Cleared ${count} customers from IndexedDB`);
+      
+      // Also clear all jobs since they reference customers
+      if (mainDb.objectStoreNames.contains('jobs')) {
+        const jobTx = mainDb.transaction('jobs', 'readwrite');
+        await jobTx.objectStore('jobs').clear();
+        await jobTx.done;
+        console.log('[SyncBackup CLEAR] Also cleared all jobs');
+      }
+      
+      mainDb.close();
+      
+      return { removed: count };
+    } catch (error) {
+      console.error('[SyncBackup CLEAR] Error clearing customers:', error);
+      throw error;
     }
   }
 
