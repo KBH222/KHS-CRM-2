@@ -115,21 +115,18 @@ class SyncBackupService {
         // Collect data from IndexedDB stores
         if (mainDb.objectStoreNames.contains('customers')) {
           const allCustomers = await mainDb.getAll('customers');
-          // Only include active (non-archived) customers that aren't temporary
+          // Only filter out temporary customers that haven't been synced yet
           data.customers = allCustomers.filter(c => {
-            // Skip archived customers
-            if (c.isArchived) return false;
             // Skip temporary customers (they haven't been synced yet)
             if (c.id && c.id.toString().startsWith('temp_')) return false;
             return true;
           });
           console.log('[SyncBackup] Read all customers from IndexedDB:', allCustomers.length);
-          console.log('[SyncBackup] Active non-temp customers after filtering:', data.customers.length);
+          console.log('[SyncBackup] Non-temp customers after filtering:', data.customers.length);
           
           // Log breakdown for debugging
-          const archived = allCustomers.filter(c => c.isArchived).length;
           const temp = allCustomers.filter(c => c.id && c.id.toString().startsWith('temp_')).length;
-          console.log('[SyncBackup] Breakdown - Archived:', archived, 'Temp:', temp, 'Active:', data.customers.length);
+          console.log('[SyncBackup] Temp customers excluded:', temp);
         }
         if (mainDb.objectStoreNames.contains('jobs')) {
           const allJobs = await mainDb.getAll('jobs');
@@ -458,21 +455,19 @@ class SyncBackupService {
         console.log('[SyncBackup DEBUG] Total customers in DB:', allCustomers.length);
         console.log('[SyncBackup DEBUG] Customer breakdown:');
         
-        const active = allCustomers.filter(c => !c.isArchived);
-        const archived = allCustomers.filter(c => c.isArchived);
         const temp = allCustomers.filter(c => c.id && c.id.toString().startsWith('temp_'));
-        const current = active.filter(c => c.customerType === 'CURRENT');
-        const leads = active.filter(c => c.customerType === 'LEADS');
+        const permanent = allCustomers.filter(c => c.id && !c.id.toString().startsWith('temp_'));
+        const current = permanent.filter(c => c.customerType === 'CURRENT');
+        const leads = permanent.filter(c => c.customerType === 'LEADS');
         
-        console.log('- Active customers:', active.length);
-        console.log('- Archived customers:', archived.length);
+        console.log('- Permanent customers:', permanent.length);
         console.log('- Temporary customers:', temp.length);
-        console.log('- Current customers (active):', current.length);
-        console.log('- Lead customers (active):', leads.length);
+        console.log('- Current customers:', current.length);
+        console.log('- Lead customers:', leads.length);
         
         console.log('[SyncBackup DEBUG] All customer IDs and names:');
         allCustomers.forEach(c => {
-          console.log(`  ID: ${c.id}, Name: ${c.name}, Type: ${c.customerType}, Archived: ${c.isArchived}`);
+          console.log(`  ID: ${c.id}, Name: ${c.name}, Type: ${c.customerType || 'CURRENT'}`);
         });
       }
       
