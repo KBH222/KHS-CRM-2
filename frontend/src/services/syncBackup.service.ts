@@ -114,12 +114,31 @@ class SyncBackupService {
         
         // Collect data from IndexedDB stores
         if (mainDb.objectStoreNames.contains('customers')) {
-          data.customers = await mainDb.getAll('customers');
-          console.log('[SyncBackup] Read customers from IndexedDB:', data.customers.length);
+          const allCustomers = await mainDb.getAll('customers');
+          // Only include active (non-archived) customers that aren't temporary
+          data.customers = allCustomers.filter(c => {
+            // Skip archived customers
+            if (c.isArchived) return false;
+            // Skip temporary customers (they haven't been synced yet)
+            if (c.id && c.id.toString().startsWith('temp_')) return false;
+            return true;
+          });
+          console.log('[SyncBackup] Read all customers from IndexedDB:', allCustomers.length);
+          console.log('[SyncBackup] Active non-temp customers after filtering:', data.customers.length);
+          
+          // Log breakdown for debugging
+          const archived = allCustomers.filter(c => c.isArchived).length;
+          const temp = allCustomers.filter(c => c.id && c.id.toString().startsWith('temp_')).length;
+          console.log('[SyncBackup] Breakdown - Archived:', archived, 'Temp:', temp, 'Active:', data.customers.length);
         }
         if (mainDb.objectStoreNames.contains('jobs')) {
-          data.jobs = await mainDb.getAll('jobs');
-          console.log('[SyncBackup] Read jobs from IndexedDB:', data.jobs.length);
+          const allJobs = await mainDb.getAll('jobs');
+          // Filter out jobs for archived customers and temp jobs
+          data.jobs = allJobs.filter(j => {
+            if (j.id && j.id.toString().startsWith('temp_')) return false;
+            return true;
+          });
+          console.log('[SyncBackup] Read jobs from IndexedDB:', allJobs.length, 'Active:', data.jobs.length);
         }
         if (mainDb.objectStoreNames.contains('materials')) {
           data.materials = await mainDb.getAll('materials');
@@ -426,6 +445,40 @@ class SyncBackupService {
     } catch (error) {
       console.error('[SyncBackup] Failed to get storage info:', error);
       return { totalSize: 0, count: 0 };
+    }
+  }
+
+  // Debug function to analyze database contents
+  async debugDatabaseContents() {
+    try {
+      const mainDb = await openDB('khs-crm-offline', 3);
+      
+      if (mainDb.objectStoreNames.contains('customers')) {
+        const allCustomers = await mainDb.getAll('customers');
+        console.log('[SyncBackup DEBUG] Total customers in DB:', allCustomers.length);
+        console.log('[SyncBackup DEBUG] Customer breakdown:');
+        
+        const active = allCustomers.filter(c => !c.isArchived);
+        const archived = allCustomers.filter(c => c.isArchived);
+        const temp = allCustomers.filter(c => c.id && c.id.toString().startsWith('temp_'));
+        const current = active.filter(c => c.customerType === 'CURRENT');
+        const leads = active.filter(c => c.customerType === 'LEADS');
+        
+        console.log('- Active customers:', active.length);
+        console.log('- Archived customers:', archived.length);
+        console.log('- Temporary customers:', temp.length);
+        console.log('- Current customers (active):', current.length);
+        console.log('- Lead customers (active):', leads.length);
+        
+        console.log('[SyncBackup DEBUG] All customer IDs and names:');
+        allCustomers.forEach(c => {
+          console.log(`  ID: ${c.id}, Name: ${c.name}, Type: ${c.customerType}, Archived: ${c.isArchived}`);
+        });
+      }
+      
+      mainDb.close();
+    } catch (error) {
+      console.error('[SyncBackup DEBUG] Error analyzing database:', error);
     }
   }
 }

@@ -97,6 +97,9 @@ export const SyncBackupManager = () => {
   const handleCreateManualBackup = async () => {
     setIsLoading(true);
     try {
+      // Debug database contents first
+      await syncBackupService.debugDatabaseContents();
+      
       const backupId = await syncBackupService.createPreSyncSnapshot('Manual backup');
       if (backupId) {
         loadSnapshots();
