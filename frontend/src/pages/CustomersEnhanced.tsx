@@ -340,12 +340,6 @@ const CustomersEnhanced = () => {
         // Switched to "All Customers" to show the new customer
       }
       
-      // Force a reload to ensure the customer shows up
-      console.log('[handleAddCustomer] Forcing reload of customers');
-      setTimeout(() => {
-        loadCustomers();
-      }, 100);
-      
       return customer; // Return customer with real ID
     } catch (err: any) {
       console.error('[handleAddCustomer] Error:', err);
