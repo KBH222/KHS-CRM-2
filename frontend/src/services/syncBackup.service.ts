@@ -110,7 +110,7 @@ class SyncBackupService {
 
       // Read from IndexedDB which is the primary storage
       try {
-        const mainDb = await openDB('khs-crm-db', 1);
+        const mainDb = await openDB('khs-crm-offline', 3);
         
         // Collect data from IndexedDB stores
         if (mainDb.objectStoreNames.contains('customers')) {
@@ -255,7 +255,7 @@ class SyncBackupService {
 
       // Restore to IndexedDB (primary storage)
       try {
-        const mainDb = await openDB('khs-crm-db', 1);
+        const mainDb = await openDB('khs-crm-offline', 3);
         
         // Restore customers
         if (mainDb.objectStoreNames.contains('customers') && snapshot.data.customers.length > 0) {
