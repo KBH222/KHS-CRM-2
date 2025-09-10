@@ -4,6 +4,7 @@ import { profileStorage } from '../utils/localStorage';
 import { UsersManagement } from '../components/UsersManagement';
 import { useIsOwner, useUser } from '../stores/auth.store';
 import { SyncBackupManager } from '../components/SyncBackupManager';
+import { SimpleBackupManager } from '../components/SimpleBackupManager';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -103,7 +104,8 @@ const Profile = () => {
     { id: 'notifications', label: 'Alerts', icon: '🔔' },
     { id: 'settings', label: 'Settings', icon: '⚙️' },
     ...(isOwner ? [{ id: 'users', label: 'Users', icon: '👥' }] : []),
-    { id: 'backup', label: 'Backup', icon: '💾' },
+    { id: 'simple-backup', label: 'Simple Backup', icon: '💾' },
+    { id: 'backup', label: 'Advanced', icon: '🔧' },
     { id: 'sync-backups', label: 'Sync History', icon: '🔄' },
     { id: 'security', label: 'Security', icon: '🔒', isLink: true, path: '/security' },
     { id: 'reports', label: 'Reports', icon: '📊', isLink: true, path: '/reports' },
@@ -1221,6 +1223,11 @@ const Profile = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Simple Backup Tab */}
+        {activeTab === 'simple-backup' && (
+          <SimpleBackupManager />
         )}
 
         {/* Sync History Tab */}
