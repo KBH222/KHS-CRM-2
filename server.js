@@ -5,6 +5,9 @@ const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execAsync = promisify(exec);
 require('dotenv').config();
 
 
@@ -67,6 +70,14 @@ const authMiddleware = (req, res, next) => {
     }
     return res.status(401).json({ error: 'Invalid token' });
   }
+};
+
+// Owner-only middleware - requires OWNER role
+const ownerOnlyMiddleware = (req, res, next) => {
+  if (!req.userRole || req.userRole !== 'OWNER') {
+    return res.status(403).json({ error: 'Access denied. Owner role required.' });
+  }
+  next();
 };
 
 // API Routes
@@ -2472,6 +2483,207 @@ app.delete('/api/schedule-events/:id', authMiddleware, async (req, res) => {
       return res.status(503).json({ error: 'Schedule events feature not available yet' });
     }
     res.status(500).json({ error: 'Failed to delete schedule event' });
+  }
+});
+
+// ==================== BACKUP ENDPOINTS ====================
+// Ensure backups directory exists
+const backupsDir = path.join(__dirname, 'server-backups');
+if (!fs.existsSync(backupsDir)) {
+  fs.mkdirSync(backupsDir, { recursive: true });
+}
+
+// Helper function to get database config
+function getDatabaseConfig() {
+  if (process.env.DATABASE_URL) {
+    const url = new URL(process.env.DATABASE_URL);
+    return {
+      host: url.hostname,
+      port: url.port || 5432,
+      user: url.username,
+      password: url.password,
+      database: url.pathname.slice(1)
+    };
+  }
+  return {
+    host: process.env.PGHOST || 'localhost',
+    port: process.env.PGPORT || 5432,
+    user: process.env.PGUSER || 'postgres',
+    password: process.env.PGPASSWORD,
+    database: process.env.PGDATABASE
+  };
+}
+
+// POST /api/backup/create - Create a new backup
+app.post('/api/backup/create', authMiddleware, ownerOnlyMiddleware, async (req, res) => {
+  try {
+    console.log('[Backup] Creating new backup...');
+    
+    const config = getDatabaseConfig();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const filename = `backup-${timestamp}.sql`;
+    const filepath = path.join(backupsDir, filename);
+    
+    // Build pg_dump command
+    const env = { ...process.env, PGPASSWORD: config.password };
+    const command = `pg_dump -h ${config.host} -p ${config.port} -U ${config.user} -d ${config.database} -f "${filepath}" --no-owner --no-privileges`;
+    
+    console.log('[Backup] Running pg_dump...');
+    
+    // Execute pg_dump
+    await execAsync(command, { env });
+    
+    // Get file size
+    const stats = fs.statSync(filepath);
+    const fileSizeMB = (stats.size / 1024 / 1024).toFixed(2);
+    
+    console.log(`[Backup] Backup created successfully: ${filename} (${fileSizeMB} MB)`);
+    
+    // Clean up old backups (keep last 30 days)
+    const maxAgeMs = 30 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    
+    const files = fs.readdirSync(backupsDir);
+    for (const file of files) {
+      if (file.startsWith('backup-') && file.endsWith('.sql')) {
+        const filePath = path.join(backupsDir, file);
+        const fileStats = fs.statSync(filePath);
+        if (now - fileStats.mtimeMs > maxAgeMs) {
+          fs.unlinkSync(filePath);
+          console.log(`[Backup] Deleted old backup: ${file}`);
+        }
+      }
+    }
+    
+    res.json({
+      success: true,
+      filename,
+      size: fileSizeMB + ' MB',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('[Backup] Error creating backup:', error);
+    
+    // Check if pg_dump is available
+    if (error.message?.includes('pg_dump') || error.code === 'ENOENT') {
+      return res.status(500).json({ 
+        error: 'pg_dump not found. PostgreSQL client tools must be installed on the server.' 
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to create backup',
+      details: error.message 
+    });
+  }
+});
+
+// GET /api/backup/list - List available backups
+app.get('/api/backup/list', authMiddleware, ownerOnlyMiddleware, async (req, res) => {
+  try {
+    const files = fs.readdirSync(backupsDir);
+    const backups = [];
+    
+    for (const file of files) {
+      if (file.startsWith('backup-') && file.endsWith('.sql')) {
+        const filepath = path.join(backupsDir, file);
+        const stats = fs.statSync(filepath);
+        
+        backups.push({
+          filename: file,
+          size: (stats.size / 1024 / 1024).toFixed(2) + ' MB',
+          created: stats.birthtime || stats.ctime,
+          modified: stats.mtime
+        });
+      }
+    }
+    
+    // Sort by created date (newest first)
+    backups.sort((a, b) => new Date(b.created) - new Date(a.created));
+    
+    res.json({
+      success: true,
+      backups,
+      count: backups.length
+    });
+    
+  } catch (error) {
+    console.error('[Backup] Error listing backups:', error);
+    res.status(500).json({ 
+      error: 'Failed to list backups',
+      details: error.message 
+    });
+  }
+});
+
+// GET /api/backup/download/:filename - Download a backup file
+app.get('/api/backup/download/:filename', authMiddleware, ownerOnlyMiddleware, async (req, res) => {
+  try {
+    const { filename } = req.params;
+    
+    // Validate filename to prevent directory traversal
+    if (!filename.match(/^backup-[\d-T]+\.sql$/)) {
+      return res.status(400).json({ error: 'Invalid filename format' });
+    }
+    
+    const filepath = path.join(backupsDir, filename);
+    
+    // Check if file exists
+    if (!fs.existsSync(filepath)) {
+      return res.status(404).json({ error: 'Backup file not found' });
+    }
+    
+    // Set headers for download
+    res.setHeader('Content-Type', 'application/sql');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    
+    // Stream the file
+    const stream = fs.createReadStream(filepath);
+    stream.pipe(res);
+    
+  } catch (error) {
+    console.error('[Backup] Error downloading backup:', error);
+    res.status(500).json({ 
+      error: 'Failed to download backup',
+      details: error.message 
+    });
+  }
+});
+
+// DELETE /api/backup/:filename - Delete a backup file
+app.delete('/api/backup/:filename', authMiddleware, ownerOnlyMiddleware, async (req, res) => {
+  try {
+    const { filename } = req.params;
+    
+    // Validate filename
+    if (!filename.match(/^backup-[\d-T]+\.sql$/)) {
+      return res.status(400).json({ error: 'Invalid filename format' });
+    }
+    
+    const filepath = path.join(backupsDir, filename);
+    
+    // Check if file exists
+    if (!fs.existsSync(filepath)) {
+      return res.status(404).json({ error: 'Backup file not found' });
+    }
+    
+    // Delete the file
+    fs.unlinkSync(filepath);
+    console.log(`[Backup] Deleted backup: ${filename}`);
+    
+    res.json({
+      success: true,
+      message: 'Backup deleted successfully',
+      filename
+    });
+    
+  } catch (error) {
+    console.error('[Backup] Error deleting backup:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete backup',
+      details: error.message 
+    });
   }
 });
 

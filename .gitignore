@@ -53,6 +53,7 @@ redis_data/
 *.sqlite
 *.sqlite3
 backups/
+server-backups/
 *.sql
 
 # Temporary
