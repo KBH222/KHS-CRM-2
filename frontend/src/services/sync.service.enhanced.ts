@@ -230,9 +230,25 @@ class EnhancedSyncService {
       const customersToSync = customers
         .filter((c: any) => c.id && !c.id.startsWith('local_'))
         .map((c: any) => {
+          // Log what we're working with
+          console.log('[EnhancedSync] Original customer object keys:', Object.keys(c));
+          
           // Remove internal fields that shouldn't be sent to server
-          const { _version, _lastModified, _synced, jobs, ...cleanCustomer } = c;
-          return cleanCustomer;
+          const { _version, _lastModified, _synced, jobs, createdAt, updatedAt, ...cleanCustomer } = c;
+          const cleaned = {
+            ...cleanCustomer,
+            createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : c.createdAt,
+            updatedAt: c.updatedAt instanceof Date ? c.updatedAt.toISOString() : c.updatedAt
+          };
+          
+          // Double-check that jobs is removed
+          if ('jobs' in cleaned) {
+            console.log('[EnhancedSync] WARNING: jobs field still present after cleaning!');
+            delete (cleaned as any).jobs;
+          }
+          
+          console.log('[EnhancedSync] Cleaned customer object keys:', Object.keys(cleaned));
+          return cleaned;
         });
       
       const jobsToSync = jobs
