@@ -1,5 +1,6 @@
 import { apiClient } from './api.service';
 import { offlineDb } from './db.service';
+import { syncBackupService } from './syncBackup.service';
 
 interface SyncResult {
   success: boolean;
@@ -32,6 +33,18 @@ class EnhancedSyncService {
     
     // Set up auto-sync
     this.setupAutoSync();
+  }
+
+  // Public method to create manual backup
+  async createManualBackup(description?: string): Promise<string | null> {
+    try {
+      const backupId = await syncBackupService.createPreSyncSnapshot(description || 'Manual backup');
+      console.log('[EnhancedSync] Manual backup created:', backupId);
+      return backupId;
+    } catch (error) {
+      console.error('[EnhancedSync] Failed to create manual backup:', error);
+      return null;
+    }
   }
 
   private getOrCreateDeviceId(): string {
@@ -78,8 +91,19 @@ class EnhancedSyncService {
       errors: []
     };
 
+    let backupId: string | null = null;
+
     try {
       console.log('[EnhancedSync] Starting full sync...');
+      
+      // Create a backup before syncing
+      console.log('[EnhancedSync] Creating pre-sync backup...');
+      backupId = await syncBackupService.createPreSyncSnapshot('Auto-sync backup');
+      if (backupId) {
+        console.log('[EnhancedSync] Backup created:', backupId);
+      } else {
+        console.warn('[EnhancedSync] Failed to create backup, proceeding with sync anyway');
+      }
 
       // First pull changes from server
       const pullResult = await this.pullFromServer();
@@ -107,6 +131,19 @@ class EnhancedSyncService {
     } catch (error) {
       console.error('[EnhancedSync] Sync failed', error);
       result.errors?.push(error instanceof Error ? error.message : 'Unknown error');
+      
+      // If sync failed and we have a backup, offer to restore
+      if (backupId && result.errors && result.errors.length > 0) {
+        console.log('[EnhancedSync] Sync failed, backup available for restore:', backupId);
+        
+        // Store the failed sync backup ID for potential restore
+        localStorage.setItem('khs-crm-failed-sync-backup', backupId);
+        
+        // Dispatch event to notify UI
+        window.dispatchEvent(new CustomEvent('sync-failed-with-backup', {
+          detail: { backupId, errors: result.errors }
+        }));
+      }
     } finally {
       this.syncing = false;
     }

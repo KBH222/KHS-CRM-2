@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { profileStorage } from '../utils/localStorage';
 import { UsersManagement } from '../components/UsersManagement';
 import { useIsOwner, useUser } from '../stores/auth.store';
+import { SyncBackupManager } from '../components/SyncBackupManager';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -105,6 +106,7 @@ const Profile = () => {
     { id: 'hours', label: 'Working Hours', icon: '🕐' },
     ...(isOwner ? [{ id: 'users', label: 'Users', icon: '👥' }] : []),
     { id: 'backup', label: 'Backup', icon: '💾' },
+    { id: 'sync-backups', label: 'Sync History', icon: '🔄' },
     { id: 'security', label: 'Security', icon: '🔒', isLink: true, path: '/security' },
     { id: 'reports', label: 'Reports', icon: '📊', isLink: true, path: '/reports' },
     { id: 'invoices', label: 'Invoices', icon: '💰', isLink: true, path: '/invoices' }
@@ -1221,6 +1223,11 @@ const Profile = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Sync History Tab */}
+        {activeTab === 'sync-backups' && (
+          <SyncBackupManager />
         )}
 
         {/* Backup Tab */}
