@@ -66,6 +66,11 @@ const Profile = () => {
     new: '',
     confirm: ''
   });
+  const [backupProgress, setBackupProgress] = useState(0);
+  const [restoreProgress, setRestoreProgress] = useState(0);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Save profile to localStorage whenever it changes
   useEffect(() => {
@@ -99,6 +104,7 @@ const Profile = () => {
     { id: 'settings', label: 'Settings', icon: '⚙️' },
     { id: 'hours', label: 'Working Hours', icon: '🕐' },
     ...(isOwner ? [{ id: 'users', label: 'Users', icon: '👥' }] : []),
+    { id: 'backup', label: 'Backup', icon: '💾' },
     { id: 'security', label: 'Security', icon: '🔒', isLink: true, path: '/security' },
     { id: 'reports', label: 'Reports', icon: '📊', isLink: true, path: '/reports' },
     { id: 'invoices', label: 'Invoices', icon: '💰', isLink: true, path: '/invoices' }
@@ -113,6 +119,171 @@ const Profile = () => {
     friday: 'Friday',
     saturday: 'Saturday',
     sunday: 'Sunday'
+  };
+
+  // Backup functionality
+  const handleBackup = async () => {
+    try {
+      setIsBackingUp(true);
+      setBackupProgress(0);
+
+      const backup: any = {
+        version: 1,
+        timestamp: new Date().toISOString(),
+        appName: 'KHS CRM',
+        data: {}
+      };
+
+      // Get all localStorage data
+      setBackupProgress(10);
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('khs-')) {
+          backup.data[key] = localStorage.getItem(key);
+        }
+      }
+
+      // Get IndexedDB data
+      setBackupProgress(30);
+      const { openDB } = await import('idb');
+      const db = await openDB('khs-crm-db', 1);
+      
+      // Get all object stores
+      const storeNames = Array.from(db.objectStoreNames);
+      backup.indexedDB = {};
+
+      for (let i = 0; i < storeNames.length; i++) {
+        const storeName = storeNames[i];
+        setBackupProgress(30 + (i / storeNames.length) * 50);
+        
+        const tx = db.transaction(storeName, 'readonly');
+        const store = tx.objectStore(storeName);
+        const allData = await store.getAll();
+        backup.indexedDB[storeName] = allData;
+        await tx.complete;
+      }
+
+      setBackupProgress(80);
+
+      // Create and download file
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `khs-crm-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setBackupProgress(100);
+      setTimeout(() => {
+        setBackupProgress(0);
+        setIsBackingUp(false);
+      }, 1000);
+
+    } catch (error) {
+      console.error('Backup failed:', error);
+      // alert('Backup failed. Please try again.');
+      setIsBackingUp(false);
+      setBackupProgress(0);
+    }
+  };
+
+  const handleRestore = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!confirm('This will replace all your current data. Are you sure you want to continue?')) {
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      setIsRestoring(true);
+      setRestoreProgress(0);
+
+      const text = await file.text();
+      const backup = JSON.parse(text);
+
+      // Validate backup
+      if (!backup.version || !backup.data || backup.appName !== 'KHS CRM') {
+        throw new Error('Invalid backup file');
+      }
+
+      setRestoreProgress(10);
+
+      // Clear existing data
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('khs-')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+
+      setRestoreProgress(20);
+
+      // Restore localStorage data
+      for (const [key, value] of Object.entries(backup.data)) {
+        localStorage.setItem(key, value as string);
+      }
+
+      setRestoreProgress(40);
+
+      // Restore IndexedDB data
+      if (backup.indexedDB) {
+        const { openDB } = await import('idb');
+        const db = await openDB('khs-crm-db', 1);
+
+        const storeNames = Object.keys(backup.indexedDB);
+        for (let i = 0; i < storeNames.length; i++) {
+          const storeName = storeNames[i];
+          setRestoreProgress(40 + (i / storeNames.length) * 40);
+
+          if (db.objectStoreNames.contains(storeName)) {
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            
+            // Clear existing data
+            await store.clear();
+            
+            // Add restored data
+            const data = backup.indexedDB[storeName];
+            for (const item of data) {
+              await store.add(item);
+            }
+            
+            await tx.complete;
+          }
+        }
+      }
+
+      setRestoreProgress(90);
+
+      // Reload profile from restored data
+      const savedProfile = profileStorage.get();
+      if (savedProfile) {
+        setProfile(savedProfile);
+      }
+
+      setRestoreProgress(100);
+      setTimeout(() => {
+        setRestoreProgress(0);
+        setIsRestoring(false);
+        // alert('Restore completed successfully! The app will now reload.');
+        window.location.reload();
+      }, 1000);
+
+    } catch (error) {
+      console.error('Restore failed:', error);
+      // alert('Restore failed. Please ensure you selected a valid backup file.');
+      setIsRestoring(false);
+      setRestoreProgress(0);
+    }
+
+    event.target.value = '';
   };
 
   return (
@@ -1049,6 +1220,195 @@ const Profile = () => {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Backup Tab */}
+        {activeTab === 'backup' && (
+          <div>
+            <h2 style={{ fontSize: '20.7px', fontWeight: '600', marginBottom: '20px' }}>
+              Backup & Restore
+            </h2>
+            
+            <div style={{ marginBottom: '32px' }}>
+              <div style={{
+                padding: '16px',
+                backgroundColor: '#EBF5FF',
+                border: '1px solid #3B82F6',
+                borderRadius: '8px',
+                marginBottom: '20px'
+              }}>
+                <h3 style={{ fontSize: '16.1px', fontWeight: '500', marginBottom: '8px', color: '#1E40AF' }}>
+                  📋 About Backups
+                </h3>
+                <p style={{ fontSize: '14px', color: '#1E40AF', margin: 0 }}>
+                  Backups include all your customers, jobs, photos, and settings. 
+                  The backup file can be used to restore your data on any device.
+                </p>
+              </div>
+
+              {/* Download Backup */}
+              <div style={{
+                backgroundColor: '#F9FAFB',
+                borderRadius: '8px',
+                padding: '24px',
+                marginBottom: '20px'
+              }}>
+                <h3 style={{ fontSize: '18.4px', fontWeight: '600', marginBottom: '12px' }}>
+                  📥 Download Backup
+                </h3>
+                <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '16px' }}>
+                  Create a backup file of all your data. This file will be saved to your Downloads folder.
+                </p>
+                
+                <button
+                  onClick={handleBackup}
+                  disabled={isBackingUp}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: isBackingUp ? '#9CA3AF' : '#3B82F6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: isBackingUp ? 'default' : 'pointer',
+                    fontSize: '16.1px',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {isBackingUp ? (
+                    <>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid white',
+                        borderTopColor: 'transparent',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }} />
+                      Creating Backup...
+                    </>
+                  ) : (
+                    <>
+                      💾 Download Backup
+                    </>
+                  )}
+                </button>
+                
+                {backupProgress > 0 && backupProgress < 100 && (
+                  <div style={{ marginTop: '16px' }}>
+                    <div style={{
+                      width: '100%',
+                      height: '8px',
+                      backgroundColor: '#E5E7EB',
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${backupProgress}%`,
+                        height: '100%',
+                        backgroundColor: '#3B82F6',
+                        transition: 'width 0.3s ease'
+                      }} />
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
+                      {backupProgress}% complete
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Restore Backup */}
+              <div style={{
+                backgroundColor: '#FEF3C7',
+                borderRadius: '8px',
+                padding: '24px'
+              }}>
+                <h3 style={{ fontSize: '18.4px', fontWeight: '600', marginBottom: '12px', color: '#92400E' }}>
+                  📤 Restore Backup
+                </h3>
+                <p style={{ fontSize: '14px', color: '#92400E', marginBottom: '16px' }}>
+                  <strong>Warning:</strong> Restoring will replace all current data with the backup data.
+                </p>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleRestore}
+                  style={{ display: 'none' }}
+                />
+                
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isRestoring}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: isRestoring ? '#9CA3AF' : '#F59E0B',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: isRestoring ? 'default' : 'pointer',
+                    fontSize: '16.1px',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {isRestoring ? (
+                    <>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid white',
+                        borderTopColor: 'transparent',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }} />
+                      Restoring...
+                    </>
+                  ) : (
+                    <>
+                      📂 Select Backup File
+                    </>
+                  )}
+                </button>
+                
+                {restoreProgress > 0 && restoreProgress < 100 && (
+                  <div style={{ marginTop: '16px' }}>
+                    <div style={{
+                      width: '100%',
+                      height: '8px',
+                      backgroundColor: '#FED7AA',
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${restoreProgress}%`,
+                        height: '100%',
+                        backgroundColor: '#F59E0B',
+                        transition: 'width 0.3s ease'
+                      }} />
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#92400E', marginTop: '4px' }}>
+                      {restoreProgress}% complete
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Add CSS animation */}
+            <style>
+              {`
+                @keyframes spin {
+                  to { transform: rotate(360deg); }
+                }
+              `}
+            </style>
           </div>
         )}
       </div>
