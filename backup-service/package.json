@@ -1,0 +1,27 @@
+{
+  "name": "khs-crm-backup-service",
+  "version": "1.0.0",
+  "description": "Automated PostgreSQL backup service for KHS CRM",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js --once",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop khs-backup",
+    "pm2:logs": "pm2 logs khs-backup",
+    "pm2:status": "pm2 status"
+  },
+  "keywords": ["backup", "postgresql", "cron", "railway"],
+  "author": "KHS CRM",
+  "license": "MIT",
+  "dependencies": {
+    "node-cron": "^3.0.3",
+    "node-notifier": "^10.0.1",
+    "dotenv": "^16.3.1",
+    "winston": "^3.11.0",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "pm2": "^5.3.0"
+  }
+}
