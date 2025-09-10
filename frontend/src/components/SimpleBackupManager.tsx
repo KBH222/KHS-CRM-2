@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { simpleBackupService } from '../services/simpleBackup.service';
-import { clearAllLocalStorage, debugLocalStorage } from '../utils/clearLocalStorage';
+import { clearAllLocalStorage, debugLocalStorage, debugIndexedDB } from '../utils/clearLocalStorage';
 
 export const SimpleBackupManager = () => {
   const [backups, setBackups] = useState<any[]>([]);
@@ -46,8 +46,9 @@ export const SimpleBackupManager = () => {
     }
   };
 
-  const handleDebugStorage = () => {
+  const handleDebugStorage = async () => {
     debugLocalStorage();
+    await debugIndexedDB();
   };
 
   const formatDate = (timestamp: string) => {

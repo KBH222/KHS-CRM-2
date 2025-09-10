@@ -1,4 +1,4 @@
-import { customersApi } from './api/customers.api';
+// Removed customersApi import - reading directly from IndexedDB
 
 interface SimpleBackup {
   id: string;
@@ -19,9 +19,10 @@ class SimpleBackupService {
     try {
       console.log('[SimpleBackup] Creating backup...');
       
-      // Get data exactly as the UI sees it
-      const customers = await customersApi.getAll();
-      console.log('[SimpleBackup] Customers from API:', customers.length, customers);
+      // Get data directly from IndexedDB to avoid API overwriting
+      const { offlineDb } = await import('./db.service');
+      const customers = await offlineDb.getCustomers();
+      console.log('[SimpleBackup] Customers from IndexedDB:', customers.length, customers);
       
       // Get jobs directly from IndexedDB to avoid localStorage issues
       const { offlineDb } = await import('./db.service');
@@ -180,7 +181,16 @@ class SimpleBackupService {
       localStorage.removeItem('khs-crm-jobs'); // Remove stale jobs cache
       localStorage.removeItem('khs-crm-customers'); // Remove stale customers cache
       
-      console.log('[SimpleBackup] Restore complete, data should be available');
+      // Verify data was actually saved
+      const verifyCustomers = await offlineDb.getCustomers();
+      const verifyJobs = await offlineDb.getJobs();
+      console.log('[SimpleBackup] Verification - Customers in DB:', verifyCustomers.length);
+      console.log('[SimpleBackup] Verification - Jobs in DB:', verifyJobs.length);
+      
+      // Set a flag to skip API sync on next load
+      localStorage.setItem('khs-crm-skip-sync-once', 'true');
+      
+      console.log('[SimpleBackup] Restore complete, data verified in IndexedDB');
       return true;
     } catch (error) {
       console.error('[SimpleBackup] Failed to apply pending restore:', error);

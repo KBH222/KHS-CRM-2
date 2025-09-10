@@ -60,8 +60,15 @@ class CustomerServiceFixed {
     console.log('[CustomerService.getCustomers] Called with customerType:', customerType);
     console.log('[CustomerService.getCustomers] Online status:', navigator.onLine);
     
-    // If online, fetch from API first
-    if (navigator.onLine) {
+    // Check if we should skip sync (after restore)
+    const skipSync = localStorage.getItem('khs-crm-skip-sync-once');
+    if (skipSync) {
+      console.log('[CustomerService.getCustomers] Skipping API sync after restore');
+      localStorage.removeItem('khs-crm-skip-sync-once');
+    }
+    
+    // If online and not skipping sync, fetch from API first
+    if (navigator.onLine && !skipSync) {
       try {
         const params = customerType ? `?type=${customerType}` : '';
         console.log('[CustomerService.getCustomers] Fetching from API with params:', params);

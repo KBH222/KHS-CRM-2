@@ -38,6 +38,38 @@ export function clearKHSLocalStorage() {
 }
 
 // Debug function to show what's in localStorage
+// Debug function to check IndexedDB contents
+export async function debugIndexedDB() {
+  console.log('[Debug IndexedDB] Checking IndexedDB contents...');
+  
+  try {
+    const { openDB } = await import('idb');
+    const db = await openDB('khs-crm-offline', 3);
+    
+    // Check customers
+    if (db.objectStoreNames.contains('customers')) {
+      const customers = await db.getAll('customers');
+      console.log(`[Debug IndexedDB] Customers: ${customers.length}`);
+      if (customers.length > 0) {
+        console.log('[Debug IndexedDB] Sample customer:', customers[0]);
+      }
+    }
+    
+    // Check jobs
+    if (db.objectStoreNames.contains('jobs')) {
+      const jobs = await db.getAll('jobs');
+      console.log(`[Debug IndexedDB] Jobs: ${jobs.length}`);
+      if (jobs.length > 0) {
+        console.log('[Debug IndexedDB] Sample job:', jobs[0]);
+      }
+    }
+    
+    db.close();
+  } catch (error) {
+    console.error('[Debug IndexedDB] Error:', error);
+  }
+}
+
 export function debugLocalStorage() {
   console.log('[Debug Storage] Current localStorage contents:');
   
