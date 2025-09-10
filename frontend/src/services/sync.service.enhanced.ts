@@ -226,9 +226,23 @@ class EnhancedSyncService {
       const jobs = await offlineDb.getUnsyncedJobs();
       const workers = JSON.parse(localStorage.getItem('khs-crm-workers') || '[]');
 
-      // Filter out any temporary/local-only data
-      const customersToSync = customers.filter((c: any) => c.id && !c.id.startsWith('local_'));
-      const jobsToSync = jobs.filter((j: any) => j.id && !j.id.startsWith('local_'));
+      // Filter out any temporary/local-only data and clean up internal fields
+      const customersToSync = customers
+        .filter((c: any) => c.id && !c.id.startsWith('local_'))
+        .map((c: any) => {
+          // Remove internal fields that shouldn't be sent to server
+          const { _version, _lastModified, _synced, jobs, ...cleanCustomer } = c;
+          return cleanCustomer;
+        });
+      
+      const jobsToSync = jobs
+        .filter((j: any) => j.id && !j.id.startsWith('local_'))
+        .map((j: any) => {
+          // Remove internal fields
+          const { _version, _lastModified, _synced, ...cleanJob } = j;
+          return cleanJob;
+        });
+      
       const workersToSync = workers.filter((w: any) => w.id && !w.id.startsWith('local_'));
 
       console.log(`[EnhancedSync] Pushing: ${customersToSync.length} customers, ${jobsToSync.length} jobs, ${workersToSync.length} workers`);
