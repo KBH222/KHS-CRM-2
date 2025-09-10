@@ -815,6 +815,56 @@ class OfflineDatabase {
     return allJobs.filter(j => !j._synced);
   }
 
+  // Bulk save methods for backup restore
+  async bulkSaveCustomers(customers: Customer[]): Promise<void> {
+    const db = await this.ensureDb();
+    const tx = db.transaction('customers', 'readwrite');
+    await Promise.all(customers.map(customer => tx.store.put({
+      ...customer,
+      _version: 1,
+      _lastModified: Date.now(),
+      _synced: true
+    })));
+    await tx.done;
+  }
+
+  async bulkSaveJobs(jobs: Job[]): Promise<void> {
+    const db = await this.ensureDb();
+    const tx = db.transaction('jobs', 'readwrite');
+    await Promise.all(jobs.map(job => tx.store.put({
+      ...job,
+      _version: 1,
+      _lastModified: Date.now(),
+      _synced: true
+    })));
+    await tx.done;
+  }
+
+  // Clear all data
+  async clearAllData(): Promise<void> {
+    const db = await this.ensureDb();
+    
+    // Clear customers
+    const customerTx = db.transaction('customers', 'readwrite');
+    await customerTx.store.clear();
+    await customerTx.done;
+    
+    // Clear jobs
+    const jobTx = db.transaction('jobs', 'readwrite');
+    await jobTx.store.clear();
+    await jobTx.done;
+    
+    // Clear materials
+    const materialTx = db.transaction('materials', 'readwrite');
+    await materialTx.store.clear();
+    await materialTx.done;
+    
+    // Clear sync queue
+    const syncTx = db.transaction('syncQueue', 'readwrite');
+    await syncTx.store.clear();
+    await syncTx.done;
+  }
+
 }
 
 export const offlineDb = new OfflineDatabase();

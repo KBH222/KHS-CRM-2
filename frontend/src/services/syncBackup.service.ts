@@ -211,7 +211,7 @@ class SyncBackupService {
         metadata: snapshot.metadata
       };
       await tx.objectStore('metadata').add(metadata);
-      await tx.complete;
+      await tx.done;
 
       console.log(`[SyncBackup] Snapshot created: ${snapshot.id}`);
       console.log(`[SyncBackup] Data size: ${(totalSize / 1024).toFixed(2)} KB`);
@@ -280,7 +280,7 @@ class SyncBackupService {
           for (const customer of snapshot.data.customers) {
             await tx.objectStore('customers').add(customer);
           }
-          await tx.complete;
+          await tx.done;
           console.log('[SyncBackup] Restored customers to IndexedDB:', snapshot.data.customers.length);
         }
 
@@ -291,7 +291,7 @@ class SyncBackupService {
           for (const job of snapshot.data.jobs) {
             await tx.objectStore('jobs').add(job);
           }
-          await tx.complete;
+          await tx.done;
           console.log('[SyncBackup] Restored jobs to IndexedDB:', snapshot.data.jobs.length);
         }
 
@@ -302,7 +302,7 @@ class SyncBackupService {
           for (const material of snapshot.data.materials) {
             await tx.objectStore('materials').add(material);
           }
-          await tx.complete;
+          await tx.done;
         }
 
         // Restore schedule events
@@ -312,7 +312,7 @@ class SyncBackupService {
           for (const event of snapshot.data.scheduleEvents) {
             await tx.objectStore('scheduleEvents').add(event);
           }
-          await tx.complete;
+          await tx.done;
         }
 
         mainDb.close();
@@ -352,7 +352,7 @@ class SyncBackupService {
       const tx = this.db.transaction(['snapshots', 'metadata'], 'readwrite');
       await tx.objectStore('snapshots').delete(snapshotId);
       await tx.objectStore('metadata').delete(snapshotId);
-      await tx.complete;
+      await tx.done;
       
       console.log(`[SyncBackup] Deleted snapshot: ${snapshotId}`);
       return true;
@@ -410,7 +410,7 @@ class SyncBackupService {
           await tx.objectStore('snapshots').delete(id);
           await tx.objectStore('metadata').delete(id);
         }
-        await tx.complete;
+        await tx.done;
         
         console.log(`[SyncBackup] Cleaned up ${toDelete.length} old snapshots`);
       }

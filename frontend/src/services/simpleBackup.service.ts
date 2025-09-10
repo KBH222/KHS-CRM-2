@@ -22,8 +22,23 @@ class SimpleBackupService {
       
       // Get data exactly as the UI sees it
       const customers = await customersApi.getAll();
-      const allJobs = await jobsApi.getAll();
+      console.log('[SimpleBackup] Customers from API:', customers.length, customers);
+      
+      // Get all jobs using the jobs API
+      const allJobsFromAPI = await jobsApi.getAll();
+      console.log('[SimpleBackup] All jobs from jobsApi.getAll():', allJobsFromAPI.length, allJobsFromAPI);
+      
+      // Also get jobs for each customer to compare
+      const jobs = [];
+      for (const customer of customers) {
+        const customerJobs = await jobsApi.getByCustomerId(customer.id);
+        console.log(`[SimpleBackup] Jobs for customer ${customer.id}:`, customerJobs.length, customerJobs);
+        jobs.push(...customerJobs);
+      }
+      console.log('[SimpleBackup] Total jobs collected:', jobs.length, jobs);
+      
       const workers = JSON.parse(localStorage.getItem('khs-crm-workers') || '[]');
+      console.log('[SimpleBackup] Workers from localStorage:', workers.length, workers);
       
       // Create backup object
       const backup: SimpleBackup = {
@@ -31,7 +46,7 @@ class SimpleBackupService {
         timestamp: new Date().toISOString(),
         data: {
           customers,
-          jobs: allJobs,
+          jobs,
           workers
         }
       };
@@ -51,7 +66,7 @@ class SimpleBackupService {
       localStorage.setItem(this.BACKUP_KEY, JSON.stringify(existingBackups));
       
       console.log(`[SimpleBackup] Backup created: ${backup.id}`);
-      console.log(`[SimpleBackup] Backed up: ${customers.length} customers, ${allJobs.length} jobs, ${workers.length} workers`);
+      console.log(`[SimpleBackup] Backed up: ${customers.length} customers, ${jobs.length} jobs, ${workers.length} workers`);
       
       return backup.id;
     } catch (error) {
@@ -113,15 +128,34 @@ class SimpleBackupService {
       
       const data = JSON.parse(pendingRestore);
       
-      // Clear the pending restore flag
+      // Clear the pending restore flag first
       localStorage.removeItem('khs-crm-pending-restore');
       
-      // Apply the restore by saving to the appropriate storage
-      // For now, just log what would be restored
-      console.log('[SimpleBackup] Would restore:', data);
+      // Import the db service to restore data
+      const { offlineDb } = await import('./db.service');
       
-      // TODO: Implement actual restore logic based on your storage system
+      // Clear existing data
+      await offlineDb.clearAllData();
       
+      // Restore customers
+      if (data.customers && data.customers.length > 0) {
+        console.log('[SimpleBackup] Restoring', data.customers.length, 'customers');
+        await offlineDb.bulkSaveCustomers(data.customers);
+      }
+      
+      // Restore jobs
+      if (data.jobs && data.jobs.length > 0) {
+        console.log('[SimpleBackup] Restoring', data.jobs.length, 'jobs');
+        await offlineDb.bulkSaveJobs(data.jobs);
+      }
+      
+      // Restore workers
+      if (data.workers && data.workers.length > 0) {
+        console.log('[SimpleBackup] Restoring', data.workers.length, 'workers');
+        localStorage.setItem('khs-crm-workers', JSON.stringify(data.workers));
+      }
+      
+      console.log('[SimpleBackup] Restore complete');
       return true;
     } catch (error) {
       console.error('[SimpleBackup] Failed to apply pending restore:', error);

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Router } from './router';
 import { initializeServices, cleanupServices } from './services';
+import { simpleBackupService } from './services/simpleBackup.service';
 import { AuthSetup } from './components/AuthSetup';
 import { LoginForm } from './components/LoginForm';
 import { ToastContainer } from 'react-toastify';
@@ -56,8 +57,17 @@ function App() {
     // Initialize all services
     const initializeApp = async () => {
       try {
+        // Check for pending restore BEFORE initializing other services
+        const hadPendingRestore = await simpleBackupService.checkPendingRestore();
+        
         await initializeServices();
         setIsInitialized(true);
+        
+        // If we restored data, we need to refresh the page one more time
+        // to ensure React Query picks up the new data
+        if (hadPendingRestore) {
+          setTimeout(() => window.location.reload(), 100);
+        }
       } catch (error) {
         // Failed to initialize application
         setIsInitialized(true); // Show the app even with initialization errors
