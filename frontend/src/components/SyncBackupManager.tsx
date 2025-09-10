@@ -25,6 +25,7 @@ export const SyncBackupManager = () => {
   const [showCleanupDialog, setShowCleanupDialog] = useState(false);
   const [cleanupResult, setCleanupResult] = useState<{ removed: number; kept: number } | null>(null);
   const [showClearDialog, setShowClearDialog] = useState(false);
+  const [recoveryResult, setRecoveryResult] = useState<{ recovered: number } | null>(null);
 
   useEffect(() => {
     loadSnapshots();
@@ -155,6 +156,27 @@ export const SyncBackupManager = () => {
     }
   };
 
+  const handleRecoverJobs = async () => {
+    setIsLoading(true);
+    setRecoveryResult(null);
+    
+    try {
+      const result = await syncBackupService.recoverOrphanedJobs();
+      setRecoveryResult(result);
+      
+      // Reload page after recovery if jobs were found
+      if (result.recovered > 0) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Failed to recover jobs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleString();
@@ -259,6 +281,32 @@ export const SyncBackupManager = () => {
               Clear All
             </button>
           </div>
+        </div>
+
+        {/* Recover Jobs button */}
+        <div style={{
+          marginBottom: '16px'
+        }}>
+          <button
+            onClick={handleRecoverJobs}
+            disabled={isLoading}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#10B981',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '14px',
+              cursor: isLoading ? 'default' : 'pointer',
+              opacity: isLoading ? 0.5 : 1,
+              width: '100%'
+            }}
+          >
+            🔧 Recover Missing Jobs
+          </button>
+          <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
+            If you had jobs that went missing, this will attempt to recover them from local storage.
+          </p>
         </div>
 
         {/* Failed sync alert */}
@@ -611,6 +659,30 @@ export const SyncBackupManager = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Recovery result */}
+      {recoveryResult && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: recoveryResult.recovered > 0 ? '#10B981' : '#3B82F6',
+          color: 'white',
+          padding: '16px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          zIndex: 1002
+        }}>
+          <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>
+            Job Recovery Complete
+          </h4>
+          <p style={{ fontSize: '14px' }}>
+            {recoveryResult.recovered > 0 
+              ? `Recovered ${recoveryResult.recovered} jobs. Page will reload...`
+              : `No jobs found to recover.`}
+          </p>
         </div>
       )}
 

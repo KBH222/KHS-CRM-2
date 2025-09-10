@@ -475,12 +475,24 @@ class SyncBackupService {
         }
       }
       
+      // Check for jobs in IndexedDB
+      if (mainDb.objectStoreNames.contains('jobs')) {
+        const allJobs = await mainDb.getAll('jobs');
+        console.log('[SyncBackup DEBUG] IndexedDB jobs:', allJobs.length);
+        if (allJobs.length > 0) {
+          console.log('[SyncBackup DEBUG] Job details:');
+          allJobs.forEach(j => {
+            console.log(`  ID: ${j.id}, Title: ${j.title}, Customer: ${j.customerId}, Status: ${j.status}`);
+          });
+        }
+      }
+      
       mainDb.close();
       
-      // Also check localStorage for any customer data
+      // Also check localStorage for any customer/job data
       console.log('[SyncBackup DEBUG] Checking localStorage...');
-      const localStorageKeys = Object.keys(localStorage).filter(key => key.includes('customer'));
-      console.log('Customer-related localStorage keys:', localStorageKeys);
+      const localStorageKeys = Object.keys(localStorage).filter(key => key.includes('customer') || key.includes('job'));
+      console.log('Customer/Job-related localStorage keys:', localStorageKeys);
       
       localStorageKeys.forEach(key => {
         const value = localStorage.getItem(key);
@@ -500,6 +512,62 @@ class SyncBackupService {
       console.log('[SyncBackup DEBUG] ========== END ANALYSIS ==========');
     } catch (error) {
       console.error('[SyncBackup DEBUG] Error analyzing database:', error);
+    }
+  }
+
+  // Recover orphaned jobs from localStorage
+  async recoverOrphanedJobs() {
+    try {
+      console.log('[SyncBackup RECOVER] Starting job recovery...');
+      
+      const mainDb = await openDB('khs-crm-offline', 3);
+      
+      // Get current customers
+      const customers = await mainDb.getAll('customers');
+      const customerIds = new Set(customers.map(c => c.id));
+      console.log('[SyncBackup RECOVER] Current customer IDs:', Array.from(customerIds));
+      
+      // Look for job data in localStorage
+      const jobKeys = Object.keys(localStorage).filter(key => key.includes('-jobs'));
+      let recoveredJobs = 0;
+      
+      for (const key of jobKeys) {
+        try {
+          const jobs = JSON.parse(localStorage.getItem(key) || '[]');
+          if (Array.isArray(jobs) && jobs.length > 0) {
+            console.log(`[SyncBackup RECOVER] Found ${jobs.length} jobs in ${key}`);
+            
+            for (const job of jobs) {
+              // Check if job's customer exists
+              if (customerIds.has(job.customerId)) {
+                // Save job to IndexedDB
+                const tx = mainDb.transaction('jobs', 'readwrite');
+                await tx.objectStore('jobs').put({
+                  ...job,
+                  _version: 1,
+                  _lastModified: Date.now(),
+                  _synced: false
+                });
+                await tx.done;
+                recoveredJobs++;
+                console.log(`[SyncBackup RECOVER] Recovered job: ${job.title} for customer ${job.customerId}`);
+              } else {
+                console.log(`[SyncBackup RECOVER] Skipping orphaned job: ${job.title} (customer ${job.customerId} not found)`);
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`[SyncBackup RECOVER] Error processing ${key}:`, error);
+        }
+      }
+      
+      mainDb.close();
+      
+      console.log(`[SyncBackup RECOVER] Recovery complete. Recovered ${recoveredJobs} jobs`);
+      return { recovered: recoveredJobs };
+    } catch (error) {
+      console.error('[SyncBackup RECOVER] Error during recovery:', error);
+      throw error;
     }
   }
 
