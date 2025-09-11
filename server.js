@@ -652,6 +652,128 @@ app.get('/api/debug/express-config', async (req, res) => {
   }
 });
 
+// Admin cleanup endpoint - removes all but the most recent customer
+app.get('/api/admin/cleanup-phantom-customers', authMiddleware, async (req, res) => {
+  try {
+    console.log('[Admin Cleanup] Starting phantom customer cleanup...');
+    
+    // Only allow admin users
+    if (req.userId !== 'admin-id') {
+      return res.status(403).json({ error: 'Unauthorized - admin access required' });
+    }
+
+    // Get total count before cleanup
+    const totalCustomersBefore = await prisma.customer.count();
+    const totalJobsBefore = await prisma.job.count();
+    
+    console.log(`[Admin Cleanup] Found ${totalCustomersBefore} total customers`);
+
+    // Find the most recently created customer
+    const mostRecentCustomer = await prisma.customer.findFirst({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        jobs: {
+          select: { id: true }
+        }
+      }
+    });
+
+    if (!mostRecentCustomer) {
+      return res.json({
+        message: 'No customers found in database',
+        deletedCustomers: 0,
+        deletedJobs: 0,
+        remaining: 0
+      });
+    }
+
+    console.log(`[Admin Cleanup] Keeping most recent customer: ${mostRecentCustomer.name} (${mostRecentCustomer.id})`);
+    console.log(`[Admin Cleanup] Created at: ${mostRecentCustomer.createdAt}`);
+
+    // Get all customers except the most recent
+    const customersToDelete = await prisma.customer.findMany({
+      where: {
+        id: { not: mostRecentCustomer.id }
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true
+      }
+    });
+
+    console.log(`[Admin Cleanup] Will delete ${customersToDelete.length} customers`);
+
+    // Delete all jobs associated with customers to be deleted
+    const jobDeleteResult = await prisma.job.deleteMany({
+      where: {
+        customerId: {
+          in: customersToDelete.map(c => c.id)
+        }
+      }
+    });
+
+    console.log(`[Admin Cleanup] Deleted ${jobDeleteResult.count} jobs`);
+
+    // Delete all customers except the most recent
+    const customerDeleteResult = await prisma.customer.deleteMany({
+      where: {
+        id: {
+          not: mostRecentCustomer.id
+        }
+      }
+    });
+
+    console.log(`[Admin Cleanup] Deleted ${customerDeleteResult.count} customers`);
+
+    // Get final counts
+    const totalCustomersAfter = await prisma.customer.count();
+    const totalJobsAfter = await prisma.job.count();
+
+    const response = {
+      success: true,
+      summary: {
+        deletedCustomers: customerDeleteResult.count,
+        deletedJobs: jobDeleteResult.count,
+        remaining: totalCustomersAfter
+      },
+      before: {
+        totalCustomers: totalCustomersBefore,
+        totalJobs: totalJobsBefore
+      },
+      after: {
+        totalCustomers: totalCustomersAfter,
+        totalJobs: totalJobsAfter
+      },
+      keptCustomer: {
+        id: mostRecentCustomer.id,
+        name: mostRecentCustomer.name,
+        email: mostRecentCustomer.email,
+        createdAt: mostRecentCustomer.createdAt,
+        jobCount: mostRecentCustomer.jobs.length
+      },
+      deletedCustomersList: customersToDelete.map(c => ({
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        createdAt: c.createdAt
+      }))
+    };
+
+    console.log('[Admin Cleanup] Cleanup completed successfully');
+    res.json(response);
+
+  } catch (error) {
+    console.error('[Admin Cleanup] Error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to cleanup phantom customers',
+      details: error.message 
+    });
+  }
+});
+
 // Debug endpoint to list all jobs
 app.get('/api/debug/jobs', async (req, res) => {
   try {
