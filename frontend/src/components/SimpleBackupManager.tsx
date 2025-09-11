@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { simpleBackupService } from '../services/simpleBackup.service';
 import { clearAllLocalStorage, debugLocalStorage, debugIndexedDB } from '../utils/clearLocalStorage';
+import { nuclearClear, verifyStorageIsEmpty } from '../utils/nuclearClear';
 
 export const SimpleBackupManager = () => {
   const [backups, setBackups] = useState<any[]>([]);
@@ -49,6 +50,39 @@ export const SimpleBackupManager = () => {
   const handleDebugStorage = async () => {
     debugLocalStorage();
     await debugIndexedDB();
+  };
+
+  const handleNuclearClear = async () => {
+    if (window.confirm('⚠️ WARNING: This will DELETE ALL DATA from localStorage, sessionStorage, IndexedDB, service workers, and caches. This cannot be undone! Are you absolutely sure?')) {
+      if (window.confirm('FINAL CONFIRMATION: All data will be permanently deleted. Continue?')) {
+        setIsLoading(true);
+        try {
+          console.log('[Nuclear Clear] Starting...');
+          const result = await nuclearClear();
+          console.log('[Nuclear Clear] Complete:', result);
+          
+          // Verify everything is cleared
+          const verification = await verifyStorageIsEmpty();
+          console.log('[Nuclear Clear] Verification:', verification);
+          
+          if (verification.isEmpty) {
+            alert('✅ All storage cleared successfully! The page will now reload.');
+          } else {
+            alert(`⚠️ Storage cleared but some data remains:\n\n${verification.findings.join('\n')}`);
+          }
+          
+          // Reload after a short delay
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } catch (error) {
+          console.error('[Nuclear Clear] Error:', error);
+          alert('Error during nuclear clear. Check console for details.');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    }
   };
 
   const formatDate = (timestamp: string) => {
@@ -107,6 +141,22 @@ export const SimpleBackupManager = () => {
               }}
             >
               Clear All Storage
+            </button>
+            <button
+              onClick={handleNuclearClear}
+              disabled={isLoading}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#7C3AED',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '13px',
+                cursor: isLoading ? 'default' : 'pointer',
+                opacity: isLoading ? 0.5 : 1
+              }}
+            >
+              {isLoading ? 'Clearing...' : '☢️ Nuclear Clear'}
             </button>
           </div>
         </div>
