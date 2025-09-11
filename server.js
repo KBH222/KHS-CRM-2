@@ -2875,6 +2875,50 @@ app.get('/api/admin/nuclear-clear-customers', async (req, res) => {
   }
 });
 
+// Nuclear clear endpoint - removes ALL customers and jobs
+app.get('/api/admin/nuclear-clear-customers', async (req, res) => {
+  try {
+    console.log('[Nuclear Clear] Starting complete database cleanup...');
+    
+    // Count before deletion
+    const beforeCustomers = await prisma.customer.count();
+    const beforeJobs = await prisma.job.count();
+    
+    console.log(`[Nuclear Clear] Found ${beforeCustomers} customers and ${beforeJobs} jobs to delete`);
+    
+    // Delete all jobs first (due to foreign key constraints)
+    const deletedJobs = await prisma.job.deleteMany({});
+    console.log(`[Nuclear Clear] Deleted ${deletedJobs.count} jobs`);
+    
+    // Delete all customers
+    const deletedCustomers = await prisma.customer.deleteMany({});
+    console.log(`[Nuclear Clear] Deleted ${deletedCustomers.count} customers`);
+    
+    res.json({
+      success: true,
+      message: 'All customers and jobs have been deleted',
+      deleted: {
+        customers: deletedCustomers.count,
+        jobs: deletedJobs.count
+      },
+      beforeCount: {
+        customers: beforeCustomers,
+        jobs: beforeJobs
+      },
+      afterCount: {
+        customers: 0,
+        jobs: 0
+      }
+    });
+  } catch (error) {
+    console.error('[Nuclear Clear] Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to clear database', 
+      details: error.message 
+    });
+  }
+});
+
 // Serve React app for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
