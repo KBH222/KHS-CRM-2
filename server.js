@@ -2809,6 +2809,72 @@ app.delete('/api/backup/:filename', authMiddleware, ownerOnlyMiddleware, async (
   }
 });
 
+// Nuclear clear endpoint - DELETE ALL CUSTOMERS AND JOBS WITHOUT AUTH
+app.get('/api/admin/nuclear-clear-customers', async (req, res) => {
+  try {
+    console.log('[NUCLEAR CLEAR] Starting nuclear clear operation...');
+    
+    // Count existing data
+    const beforeCounts = await prisma.$transaction([
+      prisma.customer.count(),
+      prisma.job.count()
+    ]);
+    
+    console.log(`[NUCLEAR CLEAR] Before deletion:`);
+    console.log(`  - Total customers: ${beforeCounts[0]}`);
+    console.log(`  - Total jobs: ${beforeCounts[1]}`);
+    
+    // Delete ALL jobs first (due to foreign key constraints)
+    console.log('[NUCLEAR CLEAR] Deleting ALL jobs...');
+    const deletedJobsResult = await prisma.job.deleteMany({});
+    console.log(`[NUCLEAR CLEAR] Deleted ${deletedJobsResult.count} jobs`);
+    
+    // Delete ALL customers
+    console.log('[NUCLEAR CLEAR] Deleting ALL customers...');
+    const deletedCustomersResult = await prisma.customer.deleteMany({});
+    console.log(`[NUCLEAR CLEAR] Deleted ${deletedCustomersResult.count} customers`);
+    
+    // Count after deletion
+    const afterCounts = await prisma.$transaction([
+      prisma.customer.count(),
+      prisma.job.count()
+    ]);
+    
+    console.log(`[NUCLEAR CLEAR] After deletion:`);
+    console.log(`  - Total customers: ${afterCounts[0]}`);
+    console.log(`  - Total jobs: ${afterCounts[1]}`);
+    
+    // Return results
+    const response = {
+      success: true,
+      message: 'Nuclear clear completed - ALL customers and jobs deleted',
+      before: {
+        totalCustomers: beforeCounts[0],
+        totalJobs: beforeCounts[1]
+      },
+      deleted: {
+        customers: deletedCustomersResult.count,
+        jobs: deletedJobsResult.count
+      },
+      after: {
+        totalCustomers: afterCounts[0],
+        totalJobs: afterCounts[1]
+      }
+    };
+    
+    console.log('[NUCLEAR CLEAR] Operation complete:', response);
+    res.json(response);
+    
+  } catch (error) {
+    console.error('[NUCLEAR CLEAR] Error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message,
+      details: error.toString()
+    });
+  }
+});
+
 // Serve React app for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
